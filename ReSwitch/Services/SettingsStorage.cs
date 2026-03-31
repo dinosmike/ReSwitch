@@ -89,8 +89,11 @@ public static class SettingsStorage
                 return merged;
             }
 
+            var profileCountBefore = loaded.Profiles.Count;
             Normalize(loaded);
             MigrateAutostartFromRegistryIfNeeded(loaded);
+            if (profileCountBefore > 5)
+                Save(loaded);
             return loaded;
         }
         catch
@@ -153,6 +156,9 @@ public static class SettingsStorage
 
     private static void Normalize(AppSettings s)
     {
+        while (s.Profiles.Count > 5)
+            s.Profiles.RemoveAt(s.Profiles.Count - 1);
+
         for (var i = 0; i < s.Profiles.Count; i++)
         {
             var p = s.Profiles[i];
@@ -170,5 +176,6 @@ public static class SettingsStorage
 
         s.UiLanguage = AppLanguageCatalog.Normalize(s.UiLanguage);
         s.ShowResolutionListInTrayMenu ??= false;
+        s.ShowProfileNamesInTrayMenu ??= true;
     }
 }

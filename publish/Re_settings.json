@@ -2,14 +2,14 @@
 {
   "profiles": [
     {
-      "name": "Профиль 1",
+      "name": "Profile 1",
       "width": 1920,
       "height": 1080,
       "refreshRate": 60,
       "bitsPerPixel": 32
     },
     {
-      "name": "Профиль 2",
+      "name": "Profile 2",
       "width": 1280,
       "height": 720,
       "refreshRate": 60,
@@ -25,5 +25,6 @@
   "traySingleClickAction": 1,
   "uiTheme": 0,
   "uiLanguage": "en",
-  "showResolutionListInTrayMenu": false
+  "showResolutionListInTrayMenu": false,
+  "showProfileNamesInTrayMenu": true
 }

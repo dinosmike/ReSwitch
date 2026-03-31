@@ -75,6 +75,7 @@ public partial class SettingsWindow
         TrayHideAnimationCheck.IsChecked = settings.MinimizeToTrayAnimationEnabled;
         TimeoutBox.Text = settings.ConfirmTimeoutSeconds.ToString();
         TrayShowResolutionMenuCheck.IsChecked = settings.ShowResolutionListInTrayMenu == true;
+        TrayShowProfileNamesCheck.IsChecked = settings.ShowProfileNamesInTrayMenu != false;
 
         var action = settings.TraySingleClickAction ?? TrayIconClickAction.OpenWindow;
         if (action == TrayIconClickAction.ToggleResolution)
@@ -110,6 +111,7 @@ public partial class SettingsWindow
             ? TrayIconClickAction.ToggleResolution
             : TrayIconClickAction.OpenWindow;
         _settings.ShowResolutionListInTrayMenu = TrayShowResolutionMenuCheck.IsChecked == true;
+        _settings.ShowProfileNamesInTrayMenu = TrayShowProfileNamesCheck.IsChecked == true;
         if (!int.TryParse(TimeoutBox.Text.Trim(), out var sec) || sec < 1)
             sec = 15;
         if (sec > 300)

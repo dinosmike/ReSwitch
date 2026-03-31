@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -22,6 +24,18 @@ public partial class MainWindow
     private AppSettings _settings = null!;
     private bool _trayHideAnimating;
     private bool _trayShowAnimating;
+    private bool _centeredOnWorkAreaOnce;
+
+    private readonly List<ProfileCard> _profileCards = new();
+
+    internal const int MaxProfiles = 5;
+    private const int MinProfiles = 2;
+
+    private const double ProfileColumnWidth = 284;
+    private const double ProfileGap = 16;
+    private const double ContentHorizontalMargin = 48;
+    /// <summary>Должно совпадать с DockPanel Margin="24" вокруг блока с профилями — для расчёта Margin.Right у кнопки «+».</summary>
+    private const double ProfileSectionDockPanelRightInset = 24;
 
     private const int TrayFlyDurationMs = 400;
     private const double TrayFlyEndScale = 0.14;
@@ -34,7 +48,7 @@ public partial class MainWindow
         InitializeComponent();
         _tooltipDelayMs = CoerceTooltipDelayMs(TryFindResource("Rs.Tooltip.InitialShowDelayMs"));
         TooltipInitialShowDelayMs = _tooltipDelayMs;
-        Loaded += (_, _) => ReloadFromStorage();
+        ReloadFromStorage();
         Loaded += (_, _) => LocalizationService.LanguageChanged += OnLocalizationLanguageChanged;
         Closed += (_, _) => LocalizationService.LanguageChanged -= OnLocalizationLanguageChanged;
     }
@@ -42,6 +56,7 @@ public partial class MainWindow
     private void OnLocalizationLanguageChanged()
     {
         ApplyCloseButtonAppearance();
+        BtnAddProfile.ToolTip = LocalizationService.T("MainWindow.AddProfile");
     }
 
     private static int CoerceTooltipDelayMs(object? r) => r switch
@@ -58,12 +73,139 @@ public partial class MainWindow
         LocalizationService.Apply(AppLanguageCatalog.Normalize(_settings.UiLanguage));
         ThemeService.Apply(_settings.UiTheme);
 
-        Bind(0, P0Name, P0W, P0H, P0Hz, P0Bpp);
-        Bind(1, P1Name, P1W, P1H, P1Hz, P1Bpp);
+        RebuildProfileUi();
         ApplyCloseButtonAppearance();
         TooltipDelayHelper.Apply(this, _tooltipDelayMs);
         if (System.Windows.Application.Current is App app)
             app.RefreshTrayMenu();
+
+        // До первого Show() задаём позицию синхронно — иначе окно мелькает в старой точке и «прыгает» после Loaded.
+        if (!_centeredOnWorkAreaOnce)
+        {
+            CenterWindowOnWorkArea();
+            ClampWindowToWorkArea();
+            _centeredOnWorkAreaOnce = true;
+        }
+        else
+        {
+            ClampWindowToWorkArea();
+        }
+    }
+
+    private void CenterWindowOnWorkArea()
+    {
+        var wa = SystemParameters.WorkArea;
+        var w = Width;
+        var h = Height;
+        if (w <= 0 || h <= 0)
+            return;
+
+        Left = wa.Left + (wa.Width - w) / 2;
+        Top = wa.Top + (wa.Height - h) / 2;
+    }
+
+    private void ClampWindowToWorkArea()
+    {
+        var wa = SystemParameters.WorkArea;
+        var w = Width;
+        var h = Height;
+        if (w <= 0 || h <= 0)
+            return;
+
+        var maxLeft = wa.Left + wa.Width - w;
+        var maxTop = wa.Top + wa.Height - h;
+        if (Left < wa.Left) Left = wa.Left;
+        if (Top < wa.Top) Top = wa.Top;
+        if (Left > maxLeft) Left = maxLeft;
+        if (Top > maxTop) Top = maxTop;
+    }
+
+    private void RebuildProfileUi()
+    {
+        ProfilesContainer.Children.Clear();
+        _profileCards.Clear();
+
+        for (var i = 0; i < _settings.Profiles.Count; i++)
+        {
+            var card = new ProfileCard(i, canRemove: i >= MinProfiles);
+            card.Bind(_settings.Profiles[i]);
+            var idx = i;
+            card.ApplyClicked += (_, _) => OnApplyProfile(idx);
+            card.GetFromWindowsClicked += (_, _) => OnGetFromWindows(idx);
+            card.RemoveClicked += (_, _) => OnRemoveProfile(idx);
+            if (i > 0)
+                card.Margin = new Thickness(ProfileGap, 0, 0, 0);
+
+            ProfilesContainer.Children.Add(card);
+            _profileCards.Add(card);
+        }
+
+        BtnAddProfile.Visibility = _settings.Profiles.Count < MaxProfiles ? Visibility.Visible : Visibility.Collapsed;
+        BtnAddProfile.ToolTip = LocalizationService.T("MainWindow.AddProfile");
+
+        UpdateWindowWidthForProfileRow();
+        ApplyAddButtonPlacement();
+    }
+
+    /// <summary>
+    /// Горизонталь: ресурс <c>Rs.Profile.AddButton.DistanceFromWindowRightPx</c> — расстояние от правого края клиентской области окна до правого края кнопки (px).
+    /// Вертикаль: центр кнопки по центру высоты Grid (как высота ряда карточек).
+    /// </summary>
+    private void ApplyAddButtonPlacement()
+    {
+        var fromWindowRight = 20d;
+        var raw = TryFindResource("Rs.Profile.AddButton.DistanceFromWindowRightPx");
+        if (raw is double d)
+            fromWindowRight = d;
+        else if (raw is IConvertible c)
+            fromWindowRight = Convert.ToDouble(c, CultureInfo.InvariantCulture);
+
+        var marginRight = fromWindowRight - ProfileSectionDockPanelRightInset;
+        BtnAddProfile.Margin = new Thickness(0, 0, marginRight, 0);
+    }
+
+    private void UpdateWindowWidthForProfileRow()
+    {
+        var n = _settings.Profiles.Count;
+        var inner = n * ProfileColumnWidth + (n > 0 ? (n - 1) * ProfileGap : 0);
+
+        var w = ContentHorizontalMargin + inner + 4;
+
+        MinWidth = w;
+        Width = w;
+    }
+
+    private void BtnAddProfile_OnClick(object sender, RoutedEventArgs e) => OnAddProfile();
+
+    private void OnAddProfile()
+    {
+        if (_settings.Profiles.Count >= MaxProfiles)
+            return;
+
+        var last = _settings.Profiles[^1];
+        var nextNum = _settings.Profiles.Count + 1;
+        _settings.Profiles.Add(new DisplayProfile
+        {
+            Name = LocalizationService.T("MainWindow.ProfileHeaderFormat", nextNum),
+            Width = last.Width,
+            Height = last.Height,
+            RefreshRate = last.RefreshRate,
+            BitsPerPixel = last.BitsPerPixel
+        });
+        SettingsStorage.Save(_settings);
+        RebuildProfileUi();
+        RefreshTrayMenuFromDisk();
+    }
+
+    private void OnRemoveProfile(int index)
+    {
+        if (index < MinProfiles || index >= _settings.Profiles.Count)
+            return;
+
+        _settings.Profiles.RemoveAt(index);
+        SettingsStorage.Save(_settings);
+        RebuildProfileUi();
+        RefreshTrayMenuFromDisk();
     }
 
     private void ApplyCloseButtonAppearance()
@@ -77,88 +219,36 @@ public partial class MainWindow
             BtnClose.Style = st;
     }
 
-    private void Bind(int index, System.Windows.Controls.TextBox name, System.Windows.Controls.TextBox w,
-        System.Windows.Controls.TextBox h, System.Windows.Controls.TextBox hz, System.Windows.Controls.TextBox bpp)
+    /// <summary>Считывает все профили с карточек в модель.</summary>
+    internal bool TryCommitAllProfilesFromUi()
     {
-        var p = _settings.Profiles[index];
-        name.Text = p.Name;
-        w.Text = p.Width.ToString();
-        h.Text = p.Height.ToString();
-        hz.Text = p.RefreshRate.ToString();
-        bpp.Text = p.BitsPerPixel.ToString();
-    }
-
-    /// <summary>Считывает оба профиля с полей главного окна в модель (имена, разрешение и т.д.).</summary>
-    internal bool TryCommitBothProfilesFromUi()
-    {
-        if (!ReadProfile(0, out var e0))
-        {
-            MessageBox.Show(e0, LocalizationService.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+        if (_profileCards.Count != _settings.Profiles.Count)
             return false;
+
+        for (var i = 0; i < _profileCards.Count; i++)
+        {
+            if (!_profileCards[i].TryReadTo(_settings.Profiles[i], out var err))
+            {
+                MessageBox.Show(err, LocalizationService.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
         }
 
-        if (!ReadProfile(1, out var e1))
-        {
-            MessageBox.Show(e1, LocalizationService.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
-            return false;
-        }
-
-        return true;
-    }
-
-    private bool ReadProfile(int index, out string? error)
-    {
-        error = null;
-        var p = _settings.Profiles[index];
-        p.Name = index == 0 ? P0Name.Text.Trim() : P1Name.Text.Trim();
-        var wBox = index == 0 ? P0W : P1W;
-        var hBox = index == 0 ? P0H : P1H;
-        var hzBox = index == 0 ? P0Hz : P1Hz;
-        var bppBox = index == 0 ? P0Bpp : P1Bpp;
-
-        if (!int.TryParse(wBox.Text.Trim(), out var wi) || wi < 320)
-        {
-            error = LocalizationService.T("Validation.InvalidWidth");
-            return false;
-        }
-
-        if (!int.TryParse(hBox.Text.Trim(), out var he) || he < 240)
-        {
-            error = LocalizationService.T("Validation.InvalidHeight");
-            return false;
-        }
-
-        if (!int.TryParse(hzBox.Text.Trim(), out var hz) || hz < 0)
-        {
-            error = LocalizationService.T("Validation.InvalidRefresh");
-            return false;
-        }
-
-        if (!int.TryParse(bppBox.Text.Trim(), out var b) || b is not (16 or 24 or 32))
-        {
-            error = LocalizationService.T("Validation.InvalidBpp");
-            return false;
-        }
-
-        p.Width = wi;
-        p.Height = he;
-        p.RefreshRate = hz;
-        p.BitsPerPixel = b;
         return true;
     }
 
     private void Save_OnClick(object sender, RoutedEventArgs e)
     {
-        if (!TryCommitBothProfilesFromUi())
+        if (!TryCommitAllProfilesFromUi())
             return;
 
         SettingsStorage.Save(_settings);
+        RefreshTrayMenuFromDisk();
         ShowSaveSuccessFeedback();
     }
 
     private void ShowSaveSuccessFeedback()
     {
-        // Сброс только в начале; между появлением и затуханием не вызывать BeginAnimation(null) — иначе мигание.
         SaveFeedbackCheck.BeginAnimation(UIElement.OpacityProperty, null);
         SaveFeedbackCheck.Opacity = 0;
 
@@ -186,7 +276,7 @@ public partial class MainWindow
     private void OpenSettings_OnClick(object sender, RoutedEventArgs e)
     {
         var dlg = new SettingsWindow { Owner = this };
-        dlg.SyncProfilesFromMainWindow = () => TryCommitBothProfilesFromUi();
+        dlg.SyncProfilesFromMainWindow = () => TryCommitAllProfilesFromUi();
         dlg.LoadSettings(_settings);
         if (dlg.ShowDialog() == true)
             ReloadFromStorage();
@@ -219,12 +309,11 @@ public partial class MainWindow
         System.Windows.Application.Current.Shutdown();
     }
 
-    private void P0_FromWindows_OnClick(object sender, RoutedEventArgs e) => FillFromWindows(0);
-
-    private void P1_FromWindows_OnClick(object sender, RoutedEventArgs e) => FillFromWindows(1);
-
-    private void FillFromWindows(int index)
+    private void OnGetFromWindows(int index)
     {
+        if (index < 0 || index >= _profileCards.Count)
+            return;
+
         if (!DisplaySettingsService.TryGetCurrentMode(out var cur, out _))
         {
             MessageBox.Show(LocalizationService.T("Errors.CouldNotGetCurrentMode"), LocalizationService.T("Common.AppTitle"),
@@ -237,32 +326,30 @@ public partial class MainWindow
         p.Height = cur.Height;
         p.RefreshRate = cur.RefreshRate;
         p.BitsPerPixel = cur.BitsPerPixel;
-        Bind(index, index == 0 ? P0Name : P1Name, index == 0 ? P0W : P1W, index == 0 ? P0H : P1H,
-            index == 0 ? P0Hz : P1Hz, index == 0 ? P0Bpp : P1Bpp);
+        _profileCards[index].Bind(p);
     }
 
-    private void P0_Apply_OnClick(object sender, RoutedEventArgs e)
+    private void OnApplyProfile(int index)
     {
-        if (!ReadProfile(0, out var err))
+        if (index < 0 || index >= _profileCards.Count)
+            return;
+
+        if (!_profileCards[index].TryReadTo(_settings.Profiles[index], out var err))
         {
             MessageBox.Show(err, LocalizationService.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         SettingsStorage.Save(_settings);
-        ResolutionSwitchCoordinator.ApplyProfile(this, 0, _settings);
+        RefreshTrayMenuFromDisk();
+        ResolutionSwitchCoordinator.ApplyProfile(this, index, _settings);
     }
 
-    private void P1_Apply_OnClick(object sender, RoutedEventArgs e)
+    /// <summary>Меню трея читает профили из файла — обновляем после любой записи на диск.</summary>
+    private static void RefreshTrayMenuFromDisk()
     {
-        if (!ReadProfile(1, out var err))
-        {
-            MessageBox.Show(err, LocalizationService.T("Common.AppTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-
-        SettingsStorage.Save(_settings);
-        ResolutionSwitchCoordinator.ApplyProfile(this, 1, _settings);
+        if (System.Windows.Application.Current is App app)
+            app.RefreshTrayMenu();
     }
 
     protected override void OnClosing(CancelEventArgs e)

@@ -10,6 +10,9 @@ namespace ReSwitch;
 
 public sealed class TrayService : IDisposable
 {
+    /// <summary>Маркер в той же строке, что и текст — левый край как у «Открыть»/«Настройки» (U+2022 «•», чуть крупнее средней точки).</summary>
+    private const string TrayProfileBulletPrefix = "\u2022 ";
+
     /// <summary>Должно быть не меньше системного DoubleClickTime, иначе одиночный клик срабатывает раньше распознавания двойного.</summary>
     private static int SingleClickDelayMs =>
         Math.Clamp(SystemInformation.DoubleClickTime + 40, 200, 800);
@@ -66,11 +69,12 @@ public sealed class TrayService : IDisposable
 
         if (settings.ShowResolutionListInTrayMenu == true && settings.Profiles.Count >= 2)
         {
-            for (var i = 0; i < 2; i++)
+            // Все профили из Re_settings.json (до 5 шт.), не только первые два.
+            for (var i = 0; i < settings.Profiles.Count; i++)
             {
                 var index = i;
                 var p = settings.Profiles[index];
-                var label = FormatProfileTrayMenuLabel(p);
+                var label = TrayProfileBulletPrefix + FormatProfileTrayMenuLabel(p, settings);
                 menu.Items.Add(label, null, (_, _) => ApplyProfileFromTray(index));
             }
 
@@ -81,9 +85,11 @@ public sealed class TrayService : IDisposable
         return menu;
     }
 
-    private static string FormatProfileTrayMenuLabel(DisplayProfile p)
+    private static string FormatProfileTrayMenuLabel(DisplayProfile p, AppSettings settings)
     {
         var core = $"{p.Width}×{p.Height}";
+        if (settings.ShowProfileNamesInTrayMenu == false)
+            return core;
         if (!string.IsNullOrWhiteSpace(p.Name))
             return $"{p.Name} — {core}";
         return core;
@@ -130,7 +136,7 @@ public sealed class TrayService : IDisposable
     {
         if (isDouble)
         {
-            ResolutionSwitchCoordinator.ToggleBetweenProfiles(GetOwnerWindow());
+            ResolutionSwitchCoordinator.ToggleBetweenFirstTwoProfiles(GetOwnerWindow());
             return;
         }
 
@@ -143,7 +149,7 @@ public sealed class TrayService : IDisposable
                 ShowMain();
                 break;
             case TrayIconClickAction.ToggleResolution:
-                ResolutionSwitchCoordinator.ToggleBetweenProfiles(GetOwnerWindow());
+                ResolutionSwitchCoordinator.ToggleBetweenFirstTwoProfiles(GetOwnerWindow());
                 break;
         }
     }
@@ -166,7 +172,7 @@ public sealed class TrayService : IDisposable
         if (Application.Current.MainWindow is MainWindow mw)
         {
             dlg.LoadSettings(mw.SettingsModel);
-            dlg.SyncProfilesFromMainWindow = () => mw.TryCommitBothProfilesFromUi();
+            dlg.SyncProfilesFromMainWindow = () => mw.TryCommitAllProfilesFromUi();
         }
         else
         {

@@ -3,7 +3,7 @@ using ReSwitch.Services;
 
 namespace ReSwitch.Models;
 
-/// <summary>Все настройки приложения и оба профиля дисплея (включая отображаемые имена) хранятся только в Re_settings.json рядом с exe.</summary>
+/// <summary>Все настройки приложения и профили дисплея (2–5 шт., имена в JSON) хранятся только в Re_settings.json рядом с exe.</summary>
 public sealed class AppSettings
 {
     [JsonPropertyOrder(0)]
@@ -48,6 +48,10 @@ public sealed class AppSettings
     [JsonPropertyOrder(10)]
     public bool? ShowResolutionListInTrayMenu { get; set; }
 
+    /// <summary>Подписи профилей в меню трея: имя и разрешение; при выключении — только разрешение (цифры).</summary>
+    [JsonPropertyOrder(11)]
+    public bool? ShowProfileNamesInTrayMenu { get; set; }
+
     public static AppSettings CreateDefault()
     {
         return new AppSettings
@@ -80,7 +84,8 @@ public sealed class AppSettings
             TraySingleClickAction = TrayIconClickAction.OpenWindow,
             UiTheme = UiTheme.Dark,
             UiLanguage = AppLanguageCatalog.ResolveDefaultLanguage(),
-            ShowResolutionListInTrayMenu = false
+            ShowResolutionListInTrayMenu = false,
+            ShowProfileNamesInTrayMenu = true
         };
     }
 }
