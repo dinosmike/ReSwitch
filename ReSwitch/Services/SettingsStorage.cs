@@ -2,9 +2,6 @@ using System.IO;
 using System.Linq;
 using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using ReSwitch.Models;
 
 namespace ReSwitch.Services;
@@ -16,34 +13,19 @@ public static class SettingsStorage
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        AllowTrailingCommas = true,
-        ReadCommentHandling = JsonCommentHandling.Skip
-    };
-
-    private static readonly JsonDocumentOptions LenientDocOptions = new()
-    {
-        AllowTrailingCommas = true,
-        CommentHandling = JsonCommentHandling.Skip
-    };
-
-    private static readonly JsonNodeOptions LenientNodeOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
+        // Иначе кириллица в JSON уходит в \uXXXX — в файле должны быть обычные буквы (UTF-8).
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
     private const string SettingsFileName = "Re_settings.json";
     private const string LegacySettingsFileName = "settings.json";
     private const string SettingsFileHeaderLine = "Это файл настроек программы ReSwitch";
 
-    /// <summary>%LocalAppData%\ReSwitch — каталог настроек пользователя (Windows).</summary>
-    public static string SettingsDirectory =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ReSwitch");
+    /// <summary>Папка с exe — для Re_settings.json. При single-file publish BaseDirectory указывает на temp, поэтому берём каталог процесса (кроме dotnet run).</summary>
+    public static string SettingsDirectory => GetProgramDirectory();
 
     public static string SettingsPath => Path.Combine(SettingsDirectory, SettingsFileName);
 
-    /// <summary>Каталог с exe — только для миграции старых файлов из папки программы.</summary>
     private static string GetProgramDirectory()
     {
         var processPath = Environment.ProcessPath;
@@ -61,62 +43,16 @@ public static class SettingsStorage
         return Path.GetFullPath(AppContext.BaseDirectory);
     }
 
-    /// <summary>Одноразовый перенос Re_settings.json / settings.json из папки с exe в %LocalAppData%\ReSwitch.</summary>
-    private static void TryMigrateFromProgramDirectory()
-    {
-        if (File.Exists(SettingsPath))
-            return;
-
-        var oldDir = GetProgramDirectory();
-        var newDir = Path.GetFullPath(SettingsDirectory);
-        if (string.Equals(Path.GetFullPath(oldDir), newDir, StringComparison.OrdinalIgnoreCase))
-            return;
-
-        var oldMain = Path.Combine(oldDir, SettingsFileName);
-        var oldLegacy = Path.Combine(oldDir, LegacySettingsFileName);
-
-        try
-        {
-            Directory.CreateDirectory(SettingsDirectory);
-            if (File.Exists(oldMain))
-            {
-                File.Copy(oldMain, SettingsPath, overwrite: false);
-                return;
-            }
-
-            if (!File.Exists(oldLegacy))
-                return;
-
-            var rawLegacy = File.ReadAllText(oldLegacy);
-            var jsonLegacy = ExtractJsonFromSettingsFile(rawLegacy);
-            var fromLegacy = DeserializeSettingsOrMigrate(jsonLegacy, out _);
-            if (fromLegacy?.Profiles is { Count: >= 2 })
-            {
-                Normalize(fromLegacy);
-                MigrateAutostartFromRegistryIfNeeded(fromLegacy);
-                Save(fromLegacy);
-                return;
-            }
-
-            var mergedLegacy = MergeWithDefaults(fromLegacy);
-            Save(mergedLegacy);
-        }
-        catch
-        {
-            // при ошибке миграции сработает обычная логика Load (дефолты/создание файла)
-        }
-    }
-
-    /// <summary>Загрузка из Re_settings.json: при отсутствии или повреждении файла — значения по умолчанию; при необходимости дописываются только недостающие ключи (существующий JSON не пересобирается целиком).</summary>
+    /// <summary>Загрузка из Re_settings.json: при отсутствии или повреждении файла — значения по умолчанию; при необходимости файл перезаписывается.</summary>
     /// <remarks>
-    /// Раньше настройки лежали рядом с exe; при первом запуске с новым путём файл переносится в %LocalAppData%\ReSwitch.
+    /// Раньше при отсутствии файла рядом с exe копировали %AppData%\ReSwitch\settings.json — из-за этого «первый» запуск
+    /// подтягивал старые разрешения (например 3440×1440) вместо <see cref="AppSettings.CreateDefault"/>.
+    /// Перенос из AppData при необходимости делайте вручную.
     /// </remarks>
     public static AppSettings Load()
     {
         try
         {
-            TryMigrateFromProgramDirectory();
-
             if (!File.Exists(SettingsPath))
             {
                 var legacyPath = Path.Combine(SettingsDirectory, LegacySettingsFileName);
@@ -124,7 +60,7 @@ public static class SettingsStorage
                 {
                     var rawLegacy = File.ReadAllText(legacyPath);
                     var jsonLegacy = ExtractJsonFromSettingsFile(rawLegacy);
-                    var fromLegacy = DeserializeSettingsOrMigrate(jsonLegacy, out _);
+                    var fromLegacy = JsonSerializer.Deserialize<AppSettings>(jsonLegacy, JsonOptions);
                     if (fromLegacy?.Profiles is { Count: >= 2 })
                     {
                         Normalize(fromLegacy);
@@ -145,65 +81,22 @@ public static class SettingsStorage
 
             var raw = File.ReadAllText(SettingsPath);
             var json = ExtractJsonFromSettingsFile(raw);
-            AppSettings loaded;
-            bool wasFlatLegacy;
-            try
+            var loaded = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
+            if (loaded?.Profiles is not { Count: >= 2 })
             {
-                loaded = DeserializeSettingsOrMigrate(json, out wasFlatLegacy);
-            }
-            catch
-            {
-                var sanitized = StripTrailingCommas(json);
-                try
-                {
-                    loaded = DeserializeSettingsOrMigrate(sanitized, out wasFlatLegacy);
-                }
-                catch
-                {
-                    BackupCorruptedFile();
-                    loaded = AppSettings.CreateDefault();
-                    wasFlatLegacy = false;
-                }
+                var merged = MergeWithDefaults(loaded);
+                Save(merged);
+                return merged;
             }
 
-            if (loaded == null)
-                loaded = AppSettings.CreateDefault();
-
-            if (loaded.Profiles is not { Count: >= 2 })
-            {
-                if (!TryRestoreProfilesFromRawJson(json, loaded))
-                {
-                    var merged = MergeWithDefaults(loaded);
-                    Save(merged);
-                    return merged;
-                }
-            }
-
-            var profileCountBefore = loaded.Profiles.Count;
-            var formatVersionBefore = loaded.SettingsFormatVersion;
             Normalize(loaded);
             MigrateAutostartFromRegistryIfNeeded(loaded);
-            if (profileCountBefore > 5 || wasFlatLegacy || formatVersionBefore < 6)
-                Save(loaded);
             return loaded;
         }
         catch
         {
-            BackupCorruptedFile();
             return AppSettings.CreateDefault();
         }
-    }
-
-    private static void BackupCorruptedFile()
-    {
-        try
-        {
-            if (!File.Exists(SettingsPath))
-                return;
-            var backupPath = SettingsPath + ".bak";
-            File.Copy(SettingsPath, backupPath, overwrite: true);
-        }
-        catch { /* best effort */ }
     }
 
     /// <summary>Раньше автозагрузка могла быть только в реестре; один раз переносим в Re_settings.json.</summary>
@@ -222,113 +115,10 @@ public static class SettingsStorage
     {
         Directory.CreateDirectory(SettingsDirectory);
         Normalize(settings);
-
-        JsonObject root;
-        try
-        {
-            if (File.Exists(SettingsPath))
-            {
-                var rawExisting = File.ReadAllText(SettingsPath);
-                var json = ExtractJsonFromSettingsFile(rawExisting);
-                root = ParseJsonLenient(json);
-            }
-            else
-            {
-                root = new JsonObject();
-            }
-        }
-        catch
-        {
-            root = new JsonObject();
-        }
-
-        var modelNode = JsonSerializer.SerializeToNode(settings, JsonOptions);
-        if (modelNode is JsonObject modelObj)
-        {
-            MergeModelIntoExistingJson(root, modelObj);
-            RemoveLegacyAdviceKeys(root);
-        }
-        else
-        {
-            var json = JsonSerializer.Serialize(settings, JsonOptions);
-            File.WriteAllText(SettingsPath, SettingsFileHeaderLine + Environment.NewLine + json);
-            return;
-        }
-
-        var outOpts = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
-        };
-        var outJson = root.ToJsonString(outOpts);
-        File.WriteAllText(SettingsPath, SettingsFileHeaderLine + Environment.NewLine + outJson);
+        var json = JsonSerializer.Serialize(settings, JsonOptions);
+        var content = SettingsFileHeaderLine + Environment.NewLine + json;
+        File.WriteAllText(SettingsPath, content);
     }
-
-    /// <summary>
-    /// Вливает в <paramref name="root"/> значения из <paramref name="model"/> (актуальная модель приложения):
-    /// для объектов — рекурсивное слияние с сохранением ключей, которых нет в модели;
-    /// массивы и примитивы — как в модели (профили, скаляры).
-    /// </summary>
-    private static void MergeModelIntoExistingJson(JsonObject root, JsonObject model)
-    {
-        foreach (var kvp in model)
-        {
-            if (kvp.Key == "profiles" && kvp.Value is JsonArray ma && ma.Count == 0
-                && root.TryGetPropertyValue("profiles", out var fp) && fp is JsonArray fa && fa.Count >= 2)
-                continue;
-
-            if (kvp.Value is JsonObject modelChild)
-            {
-                if (root.TryGetPropertyValue(kvp.Key, out var existing) && existing is JsonObject existingObj)
-                    MergeModelIntoExistingJson(existingObj, modelChild);
-                else
-                    root[kvp.Key] = CloneNode(kvp.Value);
-            }
-            else
-                root[kvp.Key] = CloneNode(kvp.Value);
-        }
-    }
-
-    private static JsonNode? CloneNode(JsonNode? node)
-    {
-        if (node is null)
-            return null;
-        return JsonNode.Parse(node.ToJsonString())!;
-    }
-
-    private static void RemoveLegacyAdviceKeys(JsonObject root)
-    {
-        if (!root.TryGetPropertyValue("advice", out var adviceNode) || adviceNode is not JsonObject advice)
-            return;
-        advice.Remove("onboardingComplete");
-    }
-
-    /// <summary>Парсит JSON с максимальной терпимостью: trailing commas, комментарии, удаление висящих запятых перед } и ].</summary>
-    private static JsonObject ParseJsonLenient(string json)
-    {
-        try
-        {
-            var parsed = JsonNode.Parse(json, LenientNodeOptions, LenientDocOptions);
-            return parsed as JsonObject ?? new JsonObject();
-        }
-        catch
-        {
-            var sanitized = StripTrailingCommas(json);
-            try
-            {
-                var parsed = JsonNode.Parse(sanitized, LenientNodeOptions, LenientDocOptions);
-                return parsed as JsonObject ?? new JsonObject();
-            }
-            catch
-            {
-                return new JsonObject();
-            }
-        }
-    }
-
-    /// <summary>Удаляет запятые перед <c>}</c> и <c>]</c> (частая ошибка при ручном редактировании JSON).</summary>
-    private static string StripTrailingCommas(string json) =>
-        Regex.Replace(json, @",\s*([}\]])", "$1");
 
     /// <summary>Первая строка файла — человекочитаемая подпись; далее JSON. Старые файлы без строки — целиком JSON.</summary>
     private static string ExtractJsonFromSettingsFile(string raw)
@@ -344,52 +134,6 @@ public static class SettingsStorage
         return string.Join(Environment.NewLine, lines.Skip(1)).TrimStart();
     }
 
-    /// <summary>
-    /// Старый ключ <c>onboardingComplete</c> (true = уже ответили, не спрашивать) → <c>askOnStart</c> (true = спрашивать при старте).
-    /// </summary>
-    private static void MigrateAdviceAskOnStartFromJson(string json, AppSettings s)
-    {
-        try
-        {
-            using var doc = JsonDocument.Parse(json, LenientDocOptions);
-            if (!doc.RootElement.TryGetProperty("advice", out var advice))
-                return;
-
-            if (advice.TryGetProperty("askOnStart", out var ask))
-            {
-                s.Advice.AskOnStart = ask.GetBoolean();
-                return;
-            }
-
-            if (advice.TryGetProperty("onboardingComplete", out var ob))
-                s.Advice.AskOnStart = !ob.GetBoolean();
-            else
-                s.Advice.AskOnStart = true;
-        }
-        catch
-        {
-            // оставляем значение после JsonSerializer
-        }
-    }
-
-    /// <summary>Плоский JSON (до категорий) или категоризированный с ключом <c>displayMode</c>.</summary>
-    private static AppSettings DeserializeSettingsOrMigrate(string json, out bool wasFlatLegacy)
-    {
-        using var doc = JsonDocument.Parse(json, LenientDocOptions);
-        var root = doc.RootElement;
-        if (root.TryGetProperty("displayMode", out _))
-        {
-            wasFlatLegacy = false;
-            var loaded = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? AppSettings.CreateDefault();
-            MigrateAdviceAskOnStartFromJson(json, loaded);
-            return loaded;
-        }
-
-        wasFlatLegacy = true;
-        var flat = JsonSerializer.Deserialize<AppSettingsFlatLegacy>(json, JsonOptions);
-        return flat != null ? AppSettings.FromFlatLegacy(flat) : AppSettings.CreateDefault();
-    }
-
     private static AppSettings MergeWithDefaults(AppSettings? partial)
     {
         var d = AppSettings.CreateDefault();
@@ -402,61 +146,13 @@ public static class SettingsStorage
             return partial;
         }
 
-        if (partial.Profiles is { Count: 1 })
-        {
-            partial.Profiles.Add(d.Profiles[1].Clone());
-            Normalize(partial);
-            return partial;
-        }
-
-        partial.Profiles = new List<DisplayProfile> { d.Profiles[0].Clone(), d.Profiles[1].Clone() };
+        partial.Profiles = d.Profiles;
         Normalize(partial);
         return partial;
     }
 
-    /// <summary>
-    /// Если основной десериализатор не поднял профили (пустой список / один элемент), повторно читаем массив <c>profiles</c> из текста файла.
-    /// </summary>
-    private static bool TryRestoreProfilesFromRawJson(string json, AppSettings s)
-    {
-        try
-        {
-            using var doc = JsonDocument.Parse(json, LenientDocOptions);
-            if (!doc.RootElement.TryGetProperty("profiles", out var arr) || arr.ValueKind != JsonValueKind.Array)
-                return false;
-
-            var list = new List<DisplayProfile>();
-            foreach (var el in arr.EnumerateArray())
-            {
-                var dp = JsonSerializer.Deserialize<DisplayProfile>(el.GetRawText(), JsonOptions);
-                if (dp != null)
-                    list.Add(dp);
-            }
-
-            if (list.Count < 2)
-                return false;
-
-            s.Profiles = list;
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     private static void Normalize(AppSettings s)
     {
-        s.DisplayMode ??= new DisplayModeSettings();
-        s.StartupAndWindow ??= new StartupWindowSettings();
-        s.Tray ??= new TrayMenuSettings();
-        s.Ui ??= new UiAppearanceSettings();
-        s.Advice ??= new AdviceSectionSettings();
-        s.Meta ??= new SettingsMeta();
-
-        while (s.Profiles.Count > 5)
-            s.Profiles.RemoveAt(s.Profiles.Count - 1);
-
         for (var i = 0; i < s.Profiles.Count; i++)
         {
             var p = s.Profiles[i];
@@ -474,19 +170,5 @@ public static class SettingsStorage
 
         s.UiLanguage = AppLanguageCatalog.Normalize(s.UiLanguage);
         s.ShowResolutionListInTrayMenu ??= false;
-        s.ShowProfileNamesInTrayMenu ??= true;
-
-        if (s.SettingsFormatVersion < 2)
-        {
-            s.AdviceAskOnStart = false;
-            s.AdviceEnabled = false;
-            s.SettingsFormatVersion = 2;
-        }
-
-        if (s.SettingsFormatVersion < 3)
-            s.SettingsFormatVersion = 3;
-
-        if (s.SettingsFormatVersion < 6)
-            s.SettingsFormatVersion = 6;
     }
 }

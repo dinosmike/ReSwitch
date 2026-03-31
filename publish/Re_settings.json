@@ -23,5 +23,7 @@
   "minimizeToTrayOnStartup": false,
   "minimizeToTrayAnimationEnabled": true,
   "traySingleClickAction": 1,
-  "uiTheme": 0
+  "uiTheme": 0,
+  "uiLanguage": "en",
+  "showResolutionListInTrayMenu": false
 }

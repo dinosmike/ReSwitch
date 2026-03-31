@@ -6,11 +6,8 @@ namespace ReSwitch.Services;
 
 public static class ResolutionSwitchCoordinator
 {
-    /// <summary>Если 1-й и 2-й профиль совпадают с текущим режимом одновременно — чередуем по клику из трея.</summary>
-    private static bool _trayFirstTwoNextIsSecond;
-
-    /// <summary>Переключение из трея только между 1-м и 2-м профилем (не по всем профилям по кругу).</summary>
-    public static void ToggleBetweenFirstTwoProfiles(Window? owner)
+    /// <summary>Переключить на другой из двух профилей (0 ↔ 1).</summary>
+    public static void ToggleBetweenProfiles(Window? owner)
     {
         var settings = SettingsStorage.Load();
         if (settings.Profiles.Count < 2)
@@ -19,19 +16,18 @@ public static class ResolutionSwitchCoordinator
         if (!DisplaySettingsService.TryGetCurrentMode(out var current, out _))
             return;
 
-        var match0 = DisplaySettingsService.ProfileMatchesCurrent(settings.Profiles[0], current);
-        var match1 = DisplaySettingsService.ProfileMatchesCurrent(settings.Profiles[1], current);
+        var p0 = settings.Profiles[0];
+        var p1 = settings.Profiles[1];
+        var m0 = DisplaySettingsService.ProfileMatchesCurrent(p0, current);
+        var m1 = DisplaySettingsService.ProfileMatchesCurrent(p1, current);
 
         int target;
-        if (match0 && match1)
-        {
-            target = _trayFirstTwoNextIsSecond ? 1 : 0;
-            _trayFirstTwoNextIsSecond = !_trayFirstTwoNextIsSecond;
-        }
-        else if (match0)
+        if (m0 && !m1)
             target = 1;
-        else if (match1)
+        else if (m1 && !m0)
             target = 0;
+        else if (m0 && m1)
+            target = 1;
         else
             target = 0;
 

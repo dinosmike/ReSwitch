@@ -10,9 +10,6 @@ namespace ReSwitch;
 
 public sealed class TrayService : IDisposable
 {
-    /// <summary>Маркер в той же строке, что и текст — левый край как у «Открыть»/«Настройки» (U+2022 «•», чуть крупнее средней точки).</summary>
-    private const string TrayProfileBulletPrefix = "\u2022 ";
-
     /// <summary>Должно быть не меньше системного DoubleClickTime, иначе одиночный клик срабатывает раньше распознавания двойного.</summary>
     private static int SingleClickDelayMs =>
         Math.Clamp(SystemInformation.DoubleClickTime + 40, 200, 800);
@@ -64,19 +61,16 @@ public sealed class TrayService : IDisposable
         var settings = SettingsStorage.Load();
 
         menu.Items.Add(LocalizationService.T("Tray.MenuOpen"), null, (_, _) => ShowMain());
-        if (settings.AdviceEnabled)
-            menu.Items.Add(LocalizationService.T("Tray.MenuRequestAdvice"), null, (_, _) => AdviceService.RequestAdviceFromTray());
         menu.Items.Add(LocalizationService.T("Tray.MenuSettings"), null, (_, _) => ShowSettings());
         menu.Items.Add(new ToolStripSeparator());
 
         if (settings.ShowResolutionListInTrayMenu == true && settings.Profiles.Count >= 2)
         {
-            // Все профили из Re_settings.json (до 5 шт.), не только первые два.
-            for (var i = 0; i < settings.Profiles.Count; i++)
+            for (var i = 0; i < 2; i++)
             {
                 var index = i;
                 var p = settings.Profiles[index];
-                var label = TrayProfileBulletPrefix + FormatProfileTrayMenuLabel(p, settings);
+                var label = FormatProfileTrayMenuLabel(p);
                 menu.Items.Add(label, null, (_, _) => ApplyProfileFromTray(index));
             }
 
@@ -87,11 +81,9 @@ public sealed class TrayService : IDisposable
         return menu;
     }
 
-    private static string FormatProfileTrayMenuLabel(DisplayProfile p, AppSettings settings)
+    private static string FormatProfileTrayMenuLabel(DisplayProfile p)
     {
         var core = $"{p.Width}×{p.Height}";
-        if (settings.ShowProfileNamesInTrayMenu == false)
-            return core;
         if (!string.IsNullOrWhiteSpace(p.Name))
             return $"{p.Name} — {core}";
         return core;
@@ -138,7 +130,7 @@ public sealed class TrayService : IDisposable
     {
         if (isDouble)
         {
-            ResolutionSwitchCoordinator.ToggleBetweenFirstTwoProfiles(GetOwnerWindow());
+            ResolutionSwitchCoordinator.ToggleBetweenProfiles(GetOwnerWindow());
             return;
         }
 
@@ -151,7 +143,7 @@ public sealed class TrayService : IDisposable
                 ShowMain();
                 break;
             case TrayIconClickAction.ToggleResolution:
-                ResolutionSwitchCoordinator.ToggleBetweenFirstTwoProfiles(GetOwnerWindow());
+                ResolutionSwitchCoordinator.ToggleBetweenProfiles(GetOwnerWindow());
                 break;
         }
     }
@@ -170,27 +162,25 @@ public sealed class TrayService : IDisposable
 
     private static void ShowSettings()
     {
-        SettingsWindow.ShowSingletonOrActivate(dlg =>
+        var dlg = new SettingsWindow();
+        if (Application.Current.MainWindow is MainWindow mw)
         {
-            if (Application.Current.MainWindow is MainWindow mw)
-            {
-                dlg.LoadSettings(mw.SettingsModel);
-                dlg.SyncProfilesFromMainWindow = () => mw.TryCommitAllProfilesFromUi();
-            }
-            else
-            {
-                dlg.LoadSettings(SettingsStorage.Load());
-            }
+            dlg.LoadSettings(mw.SettingsModel);
+            dlg.SyncProfilesFromMainWindow = () => mw.TryCommitBothProfilesFromUi();
+        }
+        else
+        {
+            dlg.LoadSettings(SettingsStorage.Load());
+        }
 
-            dlg.Owner = null;
-            dlg.CenterOnWorkAreaAfterLoad = true;
-            dlg.WindowStartupLocation = WindowStartupLocation.CenterScreen;
-        });
+        var owner = Application.Current.MainWindow is MainWindow mwOwner && mwOwner.IsVisible ? mwOwner : null;
+        dlg.Owner = owner;
+        if (dlg.ShowDialog() == true && Application.Current.MainWindow is MainWindow main)
+            main.ReloadFromStorage();
     }
 
     private static void ExitApp()
     {
-        App.TryShowAutostartPromptOnFirstExit();
         App.ShutdownRequested = true;
         Application.Current.Shutdown();
     }

@@ -57,9 +57,7 @@ public partial class App : System.Windows.Application
         var startupSettings = SettingsStorage.Load();
         AutostartService.SetEnabled(startupSettings.AutostartEnabled);
 
-        // До показа главного окна нельзя использовать OnLastWindowClose: при первом запуске закрытие окна вопроса
-        // (советы) сочтётся «последним окном» и процесс завершится до main.Show().
-        ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        ShutdownMode = ShutdownMode.OnLastWindowClose;
         base.OnStartup(e);
 
         ThemeService.Apply(startupSettings.UiTheme);
@@ -76,15 +74,6 @@ public partial class App : System.Windows.Application
             icon.Dispose();
         }
 
-        // Вопрос «советы при запуске» только выставляет AdviceEnabled и сбрасывает askOnStart; запуск программы идёт дальше в любом случае.
-        if (startupSettings.AdviceAskOnStart)
-        {
-            var adviceDlg = new AdvicePromptWindow();
-            adviceDlg.ShowDialog();
-            startupSettings = SettingsStorage.Load();
-        }
-
-        ShutdownMode = ShutdownMode.OnLastWindowClose;
         var main = new MainWindow { Icon = wpfIcon };
         MainWindow = main;
         main.Show();
@@ -137,24 +126,6 @@ public partial class App : System.Windows.Application
 
         _mutex?.Dispose();
         base.OnExit(e);
-    }
-
-    /// <summary>Если askOnExit == true — показать вопрос про автозапуск. Вызывать ДО Shutdown().</summary>
-    internal static void TryShowAutostartPromptOnFirstExit()
-    {
-        try
-        {
-            var s = SettingsStorage.Load();
-            if (!s.AskOnExit)
-                return;
-
-            var dlg = new AutostartPromptWindow();
-            dlg.ShowDialog();
-        }
-        catch
-        {
-            // не мешаем завершению процесса
-        }
     }
 
     private static ImageSource ToImageSource(Icon icon)

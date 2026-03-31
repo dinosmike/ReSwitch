@@ -45,7 +45,7 @@
     <Style TargetType="Window">
         <Setter Property="Background" Value="{DynamicResource Rs.Window.Background}"/>
         <Setter Property="Foreground" Value="{DynamicResource Rs.Text.Primary}"/>
-        <Setter Property="FontFamily" Value="pack://application:,,,/Fonts/#Segoe UI"/>
+        <Setter Property="FontFamily" Value="Segoe UI"/>
         <Setter Property="FontSize" Value="13"/>
     </Style>
 
@@ -60,70 +60,6 @@
         <Setter Property="BorderBrush" Value="{DynamicResource Rs.Border}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="8,6"/>
-    </Style>
-
-    <!-- Контекстное меню (ПКМ по текстовым полям): фон, текст, рамка, подсветка — по теме -->
-    <Style TargetType="ContextMenu">
-        <Setter Property="SnapsToDevicePixels" Value="True"/>
-        <Setter Property="OverridesDefaultStyle" Value="True"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="ContextMenu">
-                    <Border Background="{DynamicResource Rs.Surface}"
-                            BorderBrush="{DynamicResource Rs.Border}"
-                            BorderThickness="1"
-                            Padding="0,4">
-                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
-                    </Border>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style TargetType="MenuItem">
-        <Setter Property="Foreground" Value="{DynamicResource Rs.Text.Primary}"/>
-        <Setter Property="OverridesDefaultStyle" Value="True"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="MenuItem">
-                    <Border x:Name="Bd" Background="Transparent" Padding="24,6,32,6" SnapsToDevicePixels="True">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <ContentPresenter Grid.Column="0" ContentSource="Header" RecognizesAccessKey="True"/>
-                            <TextBlock x:Name="GestureText" Grid.Column="1"
-                                       Text="{TemplateBinding InputGestureText}"
-                                       Foreground="{DynamicResource Rs.Text.Muted}"
-                                       Margin="24,0,0,0"/>
-                        </Grid>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsHighlighted" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Rs.TitleBar.ButtonHoverBackground}"/>
-                        </Trigger>
-                        <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.45"/>
-                        </Trigger>
-                        <Trigger Property="InputGestureText" Value="">
-                            <Setter TargetName="GestureText" Property="Visibility" Value="Collapsed"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style x:Key="{x:Static MenuItem.SeparatorStyleKey}" TargetType="Separator">
-        <Setter Property="OverridesDefaultStyle" Value="True"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Separator">
-                    <Border Background="{DynamicResource Rs.Border}" Height="1" Margin="8,4"/>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
     </Style>
 
     <Style TargetType="Label">
@@ -147,7 +83,7 @@
     </Style>
 
     <Style x:Key="Rs.TextBlock.ProfileActionIcon" TargetType="TextBlock">
-        <Setter Property="FontFamily" Value="pack://application:,,,/Fonts/#Segoe MDL2 Assets"/>
+        <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
         <Setter Property="FontSize" Value="{DynamicResource Rs.ProfileAction.IconSize}"/>
         <Setter Property="Foreground" Value="{DynamicResource Rs.ProfileAction.IconBrush}"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
@@ -334,8 +270,8 @@
         <Setter Property="BorderBrush" Value="{DynamicResource Rs.Border}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="8"/>
-        <Setter Property="Padding" Value="14,10"/>
-        <Setter Property="Margin" Value="0,0,0,8"/>
+        <Setter Property="Padding" Value="16,14"/>
+        <Setter Property="Margin" Value="0,0,0,12"/>
     </Style>
 
     <Style x:Key="Rs.Settings.SectionTitle" TargetType="TextBlock">
@@ -395,7 +331,7 @@
         <Setter Property="Foreground" Value="{DynamicResource Rs.Text.Primary}"/>
         <Setter Property="BorderThickness" Value="0"/>
         <Setter Property="FontSize" Value="16"/>
-        <Setter Property="FontFamily" Value="pack://application:,,,/Fonts/#Segoe UI"/>
+        <Setter Property="FontFamily" Value="Segoe UI"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="shell:WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
         <Setter Property="Template">
