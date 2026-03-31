@@ -86,7 +86,7 @@ public static class AppIconFactory
 
         using var font = new Font("Segoe UI Semibold", size * 0.38f, FontStyle.Bold, GraphicsUnit.Pixel);
         using var textBrush = new SolidBrush(textArgb);
-        const string text = "R";
+        const string text = "S";
         var sz = g.MeasureString(text, font);
         g.DrawString(text, font, textBrush, (size - sz.Width) / 2, (size - sz.Height) / 2 - size * 0.02f);
 

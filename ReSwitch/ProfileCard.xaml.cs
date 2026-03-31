@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using ReSwitch.Models;
 using ReSwitch.Services;
 using WpfUserControl = System.Windows.Controls.UserControl;
@@ -21,7 +23,60 @@ public partial class ProfileCard : WpfUserControl
         RemoveButton.Visibility = canRemove ? Visibility.Visible : Visibility.Collapsed;
         LocalizationService.LanguageChanged += OnLanguageChanged;
         Unloaded += (_, _) => LocalizationService.LanguageChanged -= OnLanguageChanged;
+        Loaded += (_, _) => BuildResolutionContextMenu();
         UpdateHeaderAndTooltips();
+    }
+
+    private void BuildResolutionContextMenu()
+    {
+        try
+        {
+            var win = Window.GetWindow(this);
+            if (win == null) return;
+
+            var raw = win.TryFindResource("Rs.Profile.ResolutionQuickPickList") as string;
+            if (string.IsNullOrWhiteSpace(raw)) return;
+
+            var entries = raw!.Split(',');
+            if (entries.Length == 0) return;
+
+            var cm = new ContextMenu();
+            cm.Items.Add(new MenuItem { Command = ApplicationCommands.Cut });
+            cm.Items.Add(new MenuItem { Command = ApplicationCommands.Copy });
+            cm.Items.Add(new MenuItem { Command = ApplicationCommands.Paste });
+            cm.Items.Add(new Separator());
+
+            foreach (var entry in entries)
+            {
+                var text = entry.Trim();
+                if (text.Length == 0) continue;
+                var mi = new MenuItem { Header = text };
+                mi.Click += (_, _) => ApplyResolutionFromMenu(text);
+                cm.Items.Add(mi);
+            }
+
+            WBox.ContextMenu = cm;
+            HBox.ContextMenu = cm;
+        }
+        catch
+        {
+            // Prevent app crash if menu construction fails
+        }
+    }
+
+    private void ApplyResolutionFromMenu(string entry)
+    {
+        var s = entry.Replace('×', 'x').Replace('X', 'x');
+        var idx = s.IndexOf('x');
+        if (idx <= 0 || idx >= s.Length - 1) return;
+
+        if (int.TryParse(s.Substring(0, idx).Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var w) &&
+            int.TryParse(s.Substring(idx + 1).Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var h) &&
+            w >= 320 && h >= 240)
+        {
+            WBox.Text = w.ToString(CultureInfo.InvariantCulture);
+            HBox.Text = h.ToString(CultureInfo.InvariantCulture);
+        }
     }
 
     private void OnLanguageChanged() => UpdateHeaderAndTooltips();
@@ -35,6 +90,11 @@ public partial class ProfileCard : WpfUserControl
     internal void Bind(DisplayProfile p)
     {
         NameBox.Text = p.Name;
+        BindDisplayMode(p);
+    }
+
+    internal void BindDisplayMode(DisplayProfile p)
+    {
         WBox.Text = p.Width.ToString();
         HBox.Text = p.Height.ToString();
         HzBox.Text = p.RefreshRate.ToString();

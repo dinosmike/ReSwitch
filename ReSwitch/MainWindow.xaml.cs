@@ -7,6 +7,7 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
+using System.Windows.Threading;
 using WinFormsScreen = System.Windows.Forms.Screen;
 using MessageBox = System.Windows.MessageBox;
 using ReSwitch.Models;
@@ -49,8 +50,15 @@ public partial class MainWindow
         _tooltipDelayMs = CoerceTooltipDelayMs(TryFindResource("Rs.Tooltip.InitialShowDelayMs"));
         TooltipInitialShowDelayMs = _tooltipDelayMs;
         ReloadFromStorage();
-        Loaded += (_, _) => LocalizationService.LanguageChanged += OnLocalizationLanguageChanged;
+        Loaded += MainWindow_OnLoaded;
         Closed += (_, _) => LocalizationService.LanguageChanged -= OnLocalizationLanguageChanged;
+    }
+
+    private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
+    {
+        LocalizationService.LanguageChanged += OnLocalizationLanguageChanged;
+        // Совет при запуске (оверлей) — после компоновки главного окна; диалог askOnStart показывается в App до Show() главного окна.
+        Dispatcher.BeginInvoke(() => AdviceService.TryScheduleStartupTip(this), DispatcherPriority.ApplicationIdle);
     }
 
     private void OnLocalizationLanguageChanged()
@@ -66,6 +74,20 @@ public partial class MainWindow
         IConvertible c => Convert.ToInt32(c, CultureInfo.InvariantCulture),
         _ => 100
     };
+
+    /// <summary>Совпадает с файлом и с галочкой «совет при запуске» в открытом окне настроек.</summary>
+    internal void ApplyAdviceEnabledFromOverlay(bool enabled)
+    {
+        _settings.AdviceEnabled = enabled;
+        foreach (System.Windows.Window w in System.Windows.Application.Current.Windows)
+        {
+            if (w is SettingsWindow sw)
+                sw.SyncAdviceCheckboxesFromModel();
+        }
+
+        if (System.Windows.Application.Current is App app)
+            app.RefreshTrayMenu();
+    }
 
     public void ReloadFromStorage()
     {
@@ -275,11 +297,14 @@ public partial class MainWindow
 
     private void OpenSettings_OnClick(object sender, RoutedEventArgs e)
     {
-        var dlg = new SettingsWindow { Owner = this };
-        dlg.SyncProfilesFromMainWindow = () => TryCommitAllProfilesFromUi();
-        dlg.LoadSettings(_settings);
-        if (dlg.ShowDialog() == true)
-            ReloadFromStorage();
+        SettingsWindow.ShowSingletonOrActivate(dlg =>
+        {
+            dlg.Owner = this;
+            dlg.CenterOnWorkAreaAfterLoad = false;
+            dlg.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            dlg.SyncProfilesFromMainWindow = () => TryCommitAllProfilesFromUi();
+            dlg.LoadSettings(_settings);
+        });
     }
 
     private void TitleBar_OnMouseDown(object sender, MouseButtonEventArgs e)
@@ -306,6 +331,7 @@ public partial class MainWindow
             return;
         }
 
+        App.TryShowAutostartPromptOnFirstExit();
         System.Windows.Application.Current.Shutdown();
     }
 
@@ -326,7 +352,7 @@ public partial class MainWindow
         p.Height = cur.Height;
         p.RefreshRate = cur.RefreshRate;
         p.BitsPerPixel = cur.BitsPerPixel;
-        _profileCards[index].Bind(p);
+        _profileCards[index].BindDisplayMode(p);
     }
 
     private void OnApplyProfile(int index)
@@ -368,6 +394,7 @@ public partial class MainWindow
             return;
         }
 
+        App.TryShowAutostartPromptOnFirstExit();
         base.OnClosing(e);
     }
 

@@ -1,6 +1,8 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Navigation;
 using ReSwitch.Models;
 using ReSwitch.Services;
 
@@ -16,6 +18,50 @@ public partial class SettingsWindow
 
     /// <summary>Если задано (главное окно открыто), перед записью Re_settings.json подтянуть профили с полей главного окна.</summary>
     public Func<bool>? SyncProfilesFromMainWindow { get; set; }
+
+    /// <summary>Если true — после первой вёрстки центрировать по рабочей области экрана (трей, <see cref="SizeToContent"/>).</summary>
+    internal bool CenterOnWorkAreaAfterLoad { get; set; }
+
+    private static SettingsWindow? _singletonInstance;
+
+    /// <summary>Одно модальное окно настроек: повторный вызов активирует уже открытое (трей / главное окно).</summary>
+    internal static void ShowSingletonOrActivate(Action<SettingsWindow> configure)
+    {
+        var app = System.Windows.Application.Current;
+        if (app?.Dispatcher == null)
+            return;
+
+        void Run()
+        {
+            if (_singletonInstance != null)
+            {
+                _singletonInstance.Activate();
+                if (_singletonInstance.WindowState == WindowState.Minimized)
+                    _singletonInstance.WindowState = WindowState.Normal;
+                _singletonInstance.Focus();
+                return;
+            }
+
+            var dlg = new SettingsWindow();
+            configure(dlg);
+            _singletonInstance = dlg;
+            try
+            {
+                if (dlg.ShowDialog() == true && app.MainWindow is MainWindow main)
+                    main.ReloadFromStorage();
+            }
+            finally
+            {
+                if (_singletonInstance == dlg)
+                    _singletonInstance = null;
+            }
+        }
+
+        if (app.Dispatcher.CheckAccess())
+            Run();
+        else
+            app.Dispatcher.Invoke(Run);
+    }
 
     public SettingsWindow()
     {
@@ -34,9 +80,21 @@ public partial class SettingsWindow
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        if (CenterOnWorkAreaAfterLoad)
+            CenterOnWorkArea();
+
         ConfirmCheck.Checked += (_, _) => UpdateConfirmDependentUi();
         ConfirmCheck.Unchecked += (_, _) => UpdateConfirmDependentUi();
         UpdateConfirmDependentUi();
+        UpdateTrayProfileNamesDependentUi();
+    }
+
+    private void CenterOnWorkArea()
+    {
+        UpdateLayout();
+        var wa = SystemParameters.WorkArea;
+        Left = wa.Left + (wa.Width - ActualWidth) / 2;
+        Top = wa.Top + (wa.Height - ActualHeight) / 2;
     }
 
     public void LoadSettings(AppSettings settings)
@@ -77,6 +135,8 @@ public partial class SettingsWindow
         TrayShowResolutionMenuCheck.IsChecked = settings.ShowResolutionListInTrayMenu == true;
         TrayShowProfileNamesCheck.IsChecked = settings.ShowProfileNamesInTrayMenu != false;
 
+        AdviceOnStartupCheck.IsChecked = settings.AdviceEnabled;
+
         var action = settings.TraySingleClickAction ?? TrayIconClickAction.OpenWindow;
         if (action == TrayIconClickAction.ToggleResolution)
         {
@@ -88,6 +148,24 @@ public partial class SettingsWindow
         }
 
         UpdateConfirmDependentUi();
+        UpdateTrayProfileNamesDependentUi();
+    }
+
+    private void TrayShowResolutionMenuCheck_OnChecked(object sender, RoutedEventArgs e) =>
+        UpdateTrayProfileNamesDependentUi();
+
+    private void UpdateTrayProfileNamesDependentUi()
+    {
+        var listOn = TrayShowResolutionMenuCheck.IsChecked == true;
+        TrayShowProfileNamesCheck.IsEnabled = listOn;
+        if (!listOn)
+            TrayShowProfileNamesCheck.IsChecked = false;
+    }
+
+    /// <summary>После смены <see cref="AppSettings.AdviceEnabled"/> извне (оверлей совета) — обновить галочки блока «Совет».</summary>
+    internal void SyncAdviceCheckboxesFromModel()
+    {
+        AdviceOnStartupCheck.IsChecked = _settings.AdviceEnabled;
     }
 
     private void UpdateConfirmDependentUi()
@@ -112,6 +190,7 @@ public partial class SettingsWindow
             : TrayIconClickAction.OpenWindow;
         _settings.ShowResolutionListInTrayMenu = TrayShowResolutionMenuCheck.IsChecked == true;
         _settings.ShowProfileNamesInTrayMenu = TrayShowProfileNamesCheck.IsChecked == true;
+        _settings.AdviceEnabled = AdviceOnStartupCheck.IsChecked == true;
         if (!int.TryParse(TimeoutBox.Text.Trim(), out var sec) || sec < 1)
             sec = 15;
         if (sec > 300)
@@ -169,6 +248,24 @@ public partial class SettingsWindow
         LocalizationService.Apply(code);
         _settings.UiLanguage = code;
         SettingsStorage.Save(_settings);
+    }
+
+    private void AdviceSectionHyperlink_OnRequestNavigate(object sender, RequestNavigateEventArgs e)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = e.Uri.AbsoluteUri,
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            // ignored
+        }
+
+        e.Handled = true;
     }
 
     private void TitleBar_OnMouseDown(object sender, MouseButtonEventArgs e)

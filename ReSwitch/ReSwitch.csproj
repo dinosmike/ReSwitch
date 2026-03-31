@@ -20,4 +20,14 @@
     <EmbeddedResource Include="Localization\*.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="Fonts\HelveticaInseratLTStd-Roman.otf" />
+    <Resource Include="Fonts\RobotoCondensed-Bold.ttf" />
+    <Resource Include="Fonts\segoeui.ttf" />
+    <Resource Include="Fonts\segoeuib.ttf" />
+    <Resource Include="Fonts\segoeuil.ttf" />
+    <Resource Include="Fonts\segoeuisl.ttf" />
+    <Resource Include="Fonts\SegMDL2.ttf" />
+  </ItemGroup>
+
 </Project>

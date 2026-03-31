@@ -112,6 +112,7 @@
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center"
                             ToolTip="{DynamicResource Loc_MainWindow_TooltipGetFromWindows}"
+                            ToolTipService.InitialShowDelay="100"
                             Click="GetFromWindows_OnClick">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <TextBlock Style="{StaticResource Rs.TextBlock.ProfileActionIcon}" Text="&#xE896;"/>
@@ -126,6 +127,7 @@
                             HorizontalAlignment="Stretch"
                             HorizontalContentAlignment="Center"
                             ToolTip="{DynamicResource Loc_MainWindow_TooltipApplyProfile}"
+                            ToolTipService.InitialShowDelay="100"
                             Click="Apply_OnClick">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <TextBlock Style="{StaticResource Rs.TextBlock.ProfileActionIcon}" Text="&#xE73E;"/>

@@ -64,6 +64,8 @@ public sealed class TrayService : IDisposable
         var settings = SettingsStorage.Load();
 
         menu.Items.Add(LocalizationService.T("Tray.MenuOpen"), null, (_, _) => ShowMain());
+        if (settings.AdviceEnabled)
+            menu.Items.Add(LocalizationService.T("Tray.MenuRequestAdvice"), null, (_, _) => AdviceService.RequestAdviceFromTray());
         menu.Items.Add(LocalizationService.T("Tray.MenuSettings"), null, (_, _) => ShowSettings());
         menu.Items.Add(new ToolStripSeparator());
 
@@ -168,25 +170,27 @@ public sealed class TrayService : IDisposable
 
     private static void ShowSettings()
     {
-        var dlg = new SettingsWindow();
-        if (Application.Current.MainWindow is MainWindow mw)
+        SettingsWindow.ShowSingletonOrActivate(dlg =>
         {
-            dlg.LoadSettings(mw.SettingsModel);
-            dlg.SyncProfilesFromMainWindow = () => mw.TryCommitAllProfilesFromUi();
-        }
-        else
-        {
-            dlg.LoadSettings(SettingsStorage.Load());
-        }
+            if (Application.Current.MainWindow is MainWindow mw)
+            {
+                dlg.LoadSettings(mw.SettingsModel);
+                dlg.SyncProfilesFromMainWindow = () => mw.TryCommitAllProfilesFromUi();
+            }
+            else
+            {
+                dlg.LoadSettings(SettingsStorage.Load());
+            }
 
-        var owner = Application.Current.MainWindow is MainWindow mwOwner && mwOwner.IsVisible ? mwOwner : null;
-        dlg.Owner = owner;
-        if (dlg.ShowDialog() == true && Application.Current.MainWindow is MainWindow main)
-            main.ReloadFromStorage();
+            dlg.Owner = null;
+            dlg.CenterOnWorkAreaAfterLoad = true;
+            dlg.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        });
     }
 
     private static void ExitApp()
     {
+        App.TryShowAutostartPromptOnFirstExit();
         App.ShutdownRequested = true;
         Application.Current.Shutdown();
     }

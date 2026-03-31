@@ -108,7 +108,7 @@
             </Border>
 
             <!-- Контент -->
-            <Grid Margin="20,16,20,0">
+            <Grid Margin="16,12,16,0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -142,20 +142,42 @@
                             <StackPanel>
                                 <TextBlock Style="{StaticResource Rs.Settings.SectionTitle}" Text="{DynamicResource Loc_SettingsWindow_SectionStartup}"/>
                                 <CheckBox x:Name="AutostartCheck"
+                                          Margin="0,0,0,4"
                                           Content="{DynamicResource Loc_SettingsWindow_Autostart}"/>
-                                <CheckBox x:Name="CloseToTrayCheck">
-                                    <TextBlock TextWrapping="Wrap"
-                                               Text="{DynamicResource Loc_SettingsWindow_CloseToTrayCross}"/>
-                                </CheckBox>
-                                <CheckBox x:Name="StartupToTrayCheck">
+                                <CheckBox x:Name="StartupToTrayCheck"
+                                          Margin="0,4">
                                     <TextBlock TextWrapping="Wrap"
                                                Text="{DynamicResource Loc_SettingsWindow_StartupToTray}"/>
                                 </CheckBox>
-                                <CheckBox x:Name="TrayHideAnimationCheck">
+                                <CheckBox x:Name="TrayHideAnimationCheck"
+                                          Margin="0,4">
                                     <TextBlock TextWrapping="Wrap"
                                                Text="{DynamicResource Loc_SettingsWindow_TrayAnimation}"/>
                                 </CheckBox>
+                                <CheckBox x:Name="CloseToTrayCheck"
+                                          Margin="0,4">
+                                    <TextBlock TextWrapping="Wrap"
+                                               Text="{DynamicResource Loc_SettingsWindow_CloseToTrayCross}"/>
+                                </CheckBox>
 
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Совет (подписи только на русском) — Margin у карточки из Rs.Settings.Card (0,0,0,12) -->
+                        <Border Style="{StaticResource Rs.Settings.Card}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource Rs.Settings.SectionTitle}">
+                                    <Hyperlink NavigateUri="https://fucking-great-advice.ru/"
+                                               RequestNavigate="AdviceSectionHyperlink_OnRequestNavigate"
+                                               TextDecorations="{x:Null}"
+                                               Foreground="{DynamicResource Rs.Text.Muted}"
+                                               Cursor="Arrow">
+                                        ОХУЕННЫЙ БЛЯТЬ СОВЕТ
+                                    </Hyperlink>
+                                </TextBlock>
+                                <CheckBox x:Name="AdviceOnStartupCheck"
+                                          Margin="0,0,0,8"
+                                          Content="{DynamicResource Loc_SettingsWindow_AdviceOnStartup}"/>
                             </StackPanel>
                         </Border>
 
@@ -163,7 +185,7 @@
                         <Border Style="{StaticResource Rs.Settings.Card}">
                             <StackPanel>
                                 <TextBlock Style="{StaticResource Rs.Settings.SectionTitle}" Text="{DynamicResource Loc_SettingsWindow_SectionTheme}"/>
-                                <Grid Margin="0,4,0,0">
+                                <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
@@ -211,8 +233,9 @@
                             <StackPanel>
                                 <TextBlock Style="{StaticResource Rs.Settings.SectionTitle}" Text="{DynamicResource Loc_SettingsWindow_SectionResolution}"/>
                                 <CheckBox x:Name="ConfirmCheck"
+                                          Margin="0,0,0,2"
                                           Content="{DynamicResource Loc_SettingsWindow_ConfirmResolution}"/>
-                                <Grid Margin="0,10,0,0">
+                                <Grid Margin="0,4,0,0">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="Auto"/>
@@ -239,7 +262,7 @@
                         </Border>
 
                         <!-- Трей -->
-                        <Border Style="{StaticResource Rs.Settings.Card}" Margin="0,0,0,0">
+                        <Border Style="{StaticResource Rs.Settings.Card}">
                             <StackPanel>
                                 <TextBlock Style="{StaticResource Rs.Settings.SectionTitle}" Text="{DynamicResource Loc_SettingsWindow_SectionTray}"/>
                                 <TextBlock TextWrapping="Wrap"
@@ -261,7 +284,9 @@
                                 </StackPanel>
                                 <CheckBox x:Name="TrayShowResolutionMenuCheck"
                                           Margin="0,12,0,0"
-                                          Content="{DynamicResource Loc_SettingsWindow_TrayShowResolutionMenu}"/>
+                                          Content="{DynamicResource Loc_SettingsWindow_TrayShowResolutionMenu}"
+                                          Checked="TrayShowResolutionMenuCheck_OnChecked"
+                                          Unchecked="TrayShowResolutionMenuCheck_OnChecked"/>
                                 <CheckBox x:Name="TrayShowProfileNamesCheck"
                                           Margin="0,8,0,0"
                                           Content="{DynamicResource Loc_SettingsWindow_TrayShowProfileNames}"/>
@@ -269,9 +294,9 @@
                         </Border>
                 </StackPanel>
 
-                <!-- Нижняя панель -->
+                <!-- Нижняя панель (верхний отступ 0 — расстояние до последней карточки задаёт Margin карточки 12, как между блоками) -->
                 <Border Grid.Row="1"
-                        Margin="0,16,0,16"
+                        Margin="0,0,0,16"
                         Padding="0,16,0,0"
                         BorderThickness="0,1,0,0"
                         BorderBrush="{DynamicResource Rs.Border}">
