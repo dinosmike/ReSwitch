@@ -1,0 +1,117 @@
+<Window x:Class="ReSwitch.AdvicePromptWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="{DynamicResource Loc_Common_AppTitle}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        SizeToContent="WidthAndHeight"
+        WindowStyle="None"
+        AllowsTransparency="False"
+        Background="{DynamicResource Rs.Window.Background}"
+        ShowInTaskbar="False"
+        SnapsToDevicePixels="True"
+        UseLayoutRounding="True"
+        MinWidth="400"
+        Loaded="AdvicePromptWindow_OnLoaded">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="44"
+                            ResizeBorderThickness="0"
+                            GlassFrameThickness="0"
+                            CornerRadius="0"
+                            UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Border BorderBrush="{DynamicResource Rs.Border}"
+            BorderThickness="1"
+            Background="{DynamicResource Rs.Window.Background}">
+        <DockPanel>
+            <!-- Заголовок как у главного окна: перетаскивание, без кнопок справа -->
+            <Border DockPanel.Dock="Top"
+                    Height="44"
+                    Background="{DynamicResource Rs.Surface}"
+                    BorderBrush="{DynamicResource Rs.Border}"
+                    BorderThickness="0,0,0,1"
+                    shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                <Border Background="Transparent"
+                        Padding="14,0,14,0"
+                        MouseLeftButtonDown="TitleBar_OnMouseDown">
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{DynamicResource Loc_Common_AppTitle}"
+                                   FontSize="15"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock Margin="0,2,0,0"
+                                   FontSize="11"
+                                   Foreground="{DynamicResource Rs.Text.Muted}"
+                                   Text="{DynamicResource Loc_MainWindow_Subtitle}"/>
+                    </StackPanel>
+                </Border>
+            </Border>
+
+            <StackPanel Margin="24">
+                <StackPanel x:Name="Step1Panel">
+                    <TextBlock Text="{DynamicResource Loc_AdvicePrompt_Question}"
+                               TextWrapping="Wrap"
+                               FontSize="14"
+                               Foreground="{DynamicResource Rs.Text.Primary}"
+                               Margin="0,0,0,20"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button x:Name="BtnYes"
+                                MinWidth="88"
+                                Margin="0,0,10,0"
+                                Padding="14,8"
+                                HorizontalContentAlignment="Center"
+                                Style="{DynamicResource Rs.Button.Accent}"
+                                Click="Yes_OnClick">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Style="{DynamicResource Rs.TextBlock.ProfileActionIcon}"
+                                           FontSize="12"
+                                           Text="&#xE73E;"/>
+                                <TextBlock VerticalAlignment="Center"
+                                           Text="{DynamicResource Loc_AdvicePrompt_Yes}"
+                                           Foreground="{DynamicResource Rs.Accent}"/>
+                            </StackPanel>
+                        </Button>
+                        <Button MinWidth="88"
+                                Padding="14,8"
+                                HorizontalContentAlignment="Center"
+                                Style="{DynamicResource Rs.Button}"
+                                Click="No_OnClick">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <TextBlock Style="{DynamicResource Rs.TextBlock.ProfileActionIcon}"
+                                           FontSize="12"
+                                           Text="&#xE711;"/>
+                                <TextBlock VerticalAlignment="Center"
+                                           Text="{DynamicResource Loc_AdvicePrompt_No}"
+                                           Foreground="{DynamicResource Rs.Text.Primary}"/>
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel x:Name="Step2Panel" Visibility="Collapsed">
+                    <TextBlock Text="Выберите вариант:"
+                               FontSize="14"
+                               Foreground="{DynamicResource Rs.Text.Primary}"
+                               Margin="0,0,0,12"/>
+                    <RadioButton x:Name="RadioUncensored"
+                                 GroupName="AdviceVariant"
+                                 Content="Без цензуры"
+                                 IsChecked="True"
+                                 Margin="0,0,0,8"
+                                 Foreground="{DynamicResource Rs.Text.Primary}"/>
+                    <RadioButton x:Name="RadioCensored"
+                                 GroupName="AdviceVariant"
+                                 Content="С цензурой"
+                                 Foreground="{DynamicResource Rs.Text.Primary}"/>
+                    <Button MinWidth="100"
+                            Margin="0,20,0,0"
+                            Padding="14,8"
+                            HorizontalAlignment="Right"
+                            Style="{DynamicResource Rs.Button.Accent}"
+                            Content="OK"
+                            Click="OkStep2_OnClick"/>
+                </StackPanel>
+            </StackPanel>
+        </DockPanel>
+    </Border>
+</Window>

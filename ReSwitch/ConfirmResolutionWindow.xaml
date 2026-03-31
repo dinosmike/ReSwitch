@@ -1,0 +1,87 @@
+<Window x:Class="ReSwitch.ConfirmResolutionWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="{DynamicResource Loc_ConfirmDialog_Title}"
+        Height="280" Width="420"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        WindowStyle="None"
+        Background="Transparent">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="40"
+                            ResizeBorderThickness="0"
+                            GlassFrameThickness="0"
+                            CornerRadius="0"
+                            UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Border Background="{DynamicResource Rs.Window.Background}"
+            BorderBrush="{DynamicResource Rs.Border}"
+            BorderThickness="1">
+        <DockPanel>
+            <Border DockPanel.Dock="Top"
+                    Height="40"
+                    Background="{DynamicResource Rs.Surface}"
+                    BorderBrush="{DynamicResource Rs.Border}"
+                    BorderThickness="0,0,0,1"
+                    shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0"
+                            Background="Transparent"
+                            Padding="14,0,8,0"
+                            MouseLeftButtonDown="TitleBar_OnMouseDown">
+                        <TextBlock Text="{DynamicResource Loc_ConfirmDialog_Header}"
+                                   VerticalAlignment="Center"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Foreground="{DynamicResource Rs.Text.Primary}"/>
+                    </Border>
+                    <Button Grid.Column="1"
+                            Style="{StaticResource Rs.TitleBar.Close}"
+                            Content="&#x00D7;"
+                            ToolTip="{DynamicResource Loc_ConfirmDialog_CloseTooltip}"
+                            Click="TitleBarClose_OnClick"/>
+                </Grid>
+            </Border>
+
+            <Grid Margin="24">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <TextBlock x:Name="MessageText"
+                           TextWrapping="Wrap"
+                           TextAlignment="Center"
+                           FontSize="14"
+                           Foreground="{DynamicResource Rs.Text.Primary}"
+                           Text="{DynamicResource Loc_ConfirmDialog_Message}"/>
+                <TextBlock Grid.Row="1"
+                           x:Name="CountdownText"
+                           VerticalAlignment="Center"
+                           FontSize="28"
+                           FontWeight="SemiBold"
+                           Foreground="{DynamicResource Rs.Accent}"
+                           HorizontalAlignment="Center"/>
+                <CheckBox Grid.Row="2"
+                          x:Name="DontShowAgainCheck"
+                          Margin="0,12,0,0"
+                          HorizontalAlignment="Center"
+                          Content="{DynamicResource Loc_ConfirmDialog_DontShowAgain}"
+                          Foreground="{DynamicResource Rs.Text.Primary}"/>
+                <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
+                    <Button x:Name="RevertButton" Style="{StaticResource Rs.Button}" Content="{DynamicResource Loc_ConfirmDialog_Revert}" MinWidth="140" Margin="0,0,12,0" Click="RevertButton_OnClick"/>
+                    <Button x:Name="ConfirmButton" Style="{StaticResource Rs.Button.Accent}" Content="{DynamicResource Loc_ConfirmDialog_Confirm}" MinWidth="120" IsDefault="True" Click="ConfirmButton_OnClick"/>
+                </StackPanel>
+            </Grid>
+        </DockPanel>
+    </Border>
+</Window>

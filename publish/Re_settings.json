@@ -1,0 +1,27 @@
+Это файл настроек программы ReSwitch
+{
+  "profiles": [
+    {
+      "name": "Профиль 1",
+      "width": 1920,
+      "height": 1080,
+      "refreshRate": 60,
+      "bitsPerPixel": 32
+    },
+    {
+      "name": "Профиль 2",
+      "width": 1280,
+      "height": 720,
+      "refreshRate": 60,
+      "bitsPerPixel": 32
+    }
+  ],
+  "confirmSwitchEnabled": true,
+  "confirmTimeoutSeconds": 15,
+  "autostartEnabled": false,
+  "minimizeToTrayOnCloseClick": false,
+  "minimizeToTrayOnStartup": false,
+  "minimizeToTrayAnimationEnabled": true,
+  "traySingleClickAction": 1,
+  "uiTheme": 0
+}

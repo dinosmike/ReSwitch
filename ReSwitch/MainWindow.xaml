@@ -1,0 +1,189 @@
+<Window x:Class="ReSwitch.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+        Title="{DynamicResource Loc_Common_AppTitle}"
+        Height="530" Width="620"
+        MinHeight="520" MinWidth="620"
+        WindowStartupLocation="Manual"
+        WindowStyle="None"
+        ResizeMode="NoResize"
+        RenderTransformOrigin="0.5,0.5">
+    <Window.Resources>
+        <!-- Задержка появления подсказок (мс). Меняйте здесь — то же значение подхватят окна настроек и подтверждения. -->
+        <sys:Int32 x:Key="Rs.Tooltip.InitialShowDelayMs">100</sys:Int32>
+        <!-- Расстояние от правого края клиентской области окна до правого края кнопки «+» (px). Учитывается отступ DockPanel 24. -->
+        <sys:Double x:Key="Rs.Profile.AddButton.DistanceFromWindowRightPx">5</sys:Double>
+        <!-- Быстрый выбор разрешения (ПКМ по полям «Ширина» / «Высота»). Формат: ширина x высота через запятую. Можно менять, добавлять и удалять. -->
+        <sys:String x:Key="Rs.Profile.ResolutionQuickPickList">3840x2160, 3440x1440, 2560x1440, 2560x1080, 1920x1080, 1680x1050, 1600x900, 1366x768, 1280x720</sys:String>
+        <!-- Плюс накладывается на правый край последней карточки; ширина окна только под ряд профилей. -->
+        <Style x:Key="Rs.Profile.AddOverlay" TargetType="Button">
+            <Setter Property="Width" Value="18"/>
+            <Setter Property="Height" Value="18"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource Rs.Accent}"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{DynamicResource Rs.Accent}"
+                                BorderThickness="0"
+                                CornerRadius="9"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderThickness" Value="1"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+    <Window.RenderTransform>
+        <ScaleTransform x:Name="TrayHideScale" ScaleX="1" ScaleY="1"/>
+    </Window.RenderTransform>
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="44"
+                            ResizeBorderThickness="6"
+                            GlassFrameThickness="0"
+                            CornerRadius="0"
+                            UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+
+    <Border Background="{DynamicResource Rs.Window.Background}"
+            BorderBrush="{DynamicResource Rs.Border}"
+            BorderThickness="1"
+            ClipToBounds="False">
+        <DockPanel>
+            <!-- Заголовок: перетаскивание слева, три кнопки справа -->
+            <Border DockPanel.Dock="Top"
+                    Height="44"
+                    Background="{DynamicResource Rs.Surface}"
+                    BorderBrush="{DynamicResource Rs.Border}"
+                    BorderThickness="0,0,0,1"
+                    shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0"
+                            Background="Transparent"
+                            Padding="14,0,8,0"
+                            MouseLeftButtonDown="TitleBar_OnMouseDown">
+                        <StackPanel VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock Text="ReSwitch" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Bottom"/>
+                                <!-- Номер текущей версии программы, меняется только вручную -->
+                                <TextBlock Text="1.3" FontSize="12" FontWeight="Thin"
+                                           Foreground="{DynamicResource Rs.Text.Muted}"
+                                           VerticalAlignment="Bottom"
+                                           Margin="6,0,0,1"/>
+                            </StackPanel>
+                            <TextBlock Margin="0,2,0,0"
+                                       FontSize="11"
+                                       Foreground="{DynamicResource Rs.Text.Muted}"
+                                       Text="{DynamicResource Loc_MainWindow_Subtitle}"/>
+                        </StackPanel>
+                    </Border>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button x:Name="BtnMinimizeToTray"
+                                Click="TitleBarMinimizeToTray_OnClick"
+                                ToolTip="{DynamicResource Loc_MainWindow_TooltipMinimizeToTray}"
+                                Style="{StaticResource Rs.TitleBar.Button}"
+                                Content="&#x2B07;"/>
+                        <Button x:Name="BtnMinimize"
+                                Click="TitleBarMinimize_OnClick"
+                                ToolTip="{DynamicResource Loc_MainWindow_TooltipMinimize}"
+                                Style="{StaticResource Rs.TitleBar.Button}"
+                                Content="&#x2212;"/>
+                        <Button x:Name="BtnClose"
+                                Click="TitleBarClose_OnClick"
+                                Style="{StaticResource Rs.TitleBar.Close}"
+                                Content="&#x00D7;"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <DockPanel Margin="24" ClipToBounds="False">
+                <Border DockPanel.Dock="Top" Margin="0,0,0,16" Padding="0,0,0,16" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource Rs.Border}">
+                    <Grid>
+                        <TextBlock TextWrapping="Wrap" Text="{DynamicResource Loc_MainWindow_Intro}"
+                                   Foreground="#D9000000">
+                            <TextBlock.RenderTransform>
+                                <TranslateTransform X="0.75" Y="2.25"/>
+                            </TextBlock.RenderTransform>
+                        </TextBlock>
+                        <TextBlock Foreground="{DynamicResource Rs.Text.Muted}" TextWrapping="Wrap"
+                                   Text="{DynamicResource Loc_MainWindow_Intro}"/>
+                    </Grid>
+                </Border>
+
+                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,3,0">
+                    <!-- Место под галочку фиксировано (MinWidth), чтобы кнопка не сдвигалась -->
+                    <TextBlock x:Name="SaveFeedbackCheck"
+                               Text="✓"
+                               FontSize="20"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource Rs.SaveSuccess}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,10,0"
+                               MinWidth="28"
+                               TextAlignment="Center"
+                               Opacity="0"/>
+                    <Button x:Name="BtnSaveProfiles"
+                            Content="{DynamicResource Loc_MainWindow_SaveProfiles}"
+                            MinWidth="160"
+                            Margin="0,0,12,0"
+                            Padding="16,8"
+                            Style="{StaticResource Rs.Button.Accent}"
+                            Click="Save_OnClick"/>
+                    <Button Style="{StaticResource Rs.Button}" MinWidth="120" Padding="12,8" Click="OpenSettings_OnClick">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Style="{StaticResource Rs.TextBlock.ProfileActionIcon}" FontSize="12" Text="&#xE713;"/>
+                            <TextBlock VerticalAlignment="Center"
+                                       Text="{DynamicResource Loc_MainWindow_Settings}"
+                                       Foreground="{DynamicResource Rs.Text.Primary}"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Плюс: Margin.Right задаётся в коде из Rs.Profile.AddButton.DistanceFromWindowRightPx; по вертикали — центр высоты карточки -->
+                <Grid MinHeight="120" ClipToBounds="False">
+                    <StackPanel x:Name="ProfilesContainer"
+                                Orientation="Horizontal"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Top"/>
+                    <Button x:Name="BtnAddProfile"
+                            Style="{StaticResource Rs.Profile.AddOverlay}"
+                            Content="+"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Margin="0"
+                            Panel.ZIndex="1"
+                            Visibility="Collapsed"
+                            Click="BtnAddProfile_OnClick">
+                        <Button.Effect>
+                            <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.35" Direction="270"/>
+                        </Button.Effect>
+                    </Button>
+                </Grid>
+            </DockPanel>
+        </DockPanel>
+    </Border>
+</Window>
