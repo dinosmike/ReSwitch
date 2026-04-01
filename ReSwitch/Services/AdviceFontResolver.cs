@@ -50,7 +50,7 @@ public static class AdviceFontResolver
     private static bool IsHelveticaInserat(string name)
     {
         var n = name.Replace(" ", "", StringComparison.Ordinal).ToLowerInvariant();
-        return n.Contains("helveticaidinserat");
+        return n.Contains("helveticainserat");
     }
 
     private static bool IsRobotoCondensed(string name)
