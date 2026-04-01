@@ -12,6 +12,12 @@ namespace ReSwitch;
 
 public partial class AdviceOverlayWindow
 {
+    /// <summary>Сдвиг оверлея вверх относительно расчётной позиции (логические px WPF).</summary>
+    private const double VerticalOffsetUpPx = 15;
+
+    /// <summary>Сдвиг оверлея влево относительно расчётной позиции (логические px WPF).</summary>
+    private const double HorizontalOffsetLeftPx = 20;
+
     private readonly AppSettings _settings;
     private readonly bool _openedFromTray;
     private DateTime? _hoverFadeNotBeforeUtc;
@@ -158,6 +164,9 @@ public partial class AdviceOverlayWindow
                 Top = screen.Bottom - h.MarginBottom - ah;
                 break;
         }
+
+        Top -= VerticalOffsetUpPx;
+        Left -= HorizontalOffsetLeftPx;
     }
 
     private void BeginFadeIn(AdviceSettings h)
