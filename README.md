@@ -4,7 +4,7 @@
 
 ## Запуск
 
-**Скачать и запустить [ReSwitch.exe](https://github.com/dinosmike/ReSwitch/releases/tag/ReSwitch_1_3) (версия 1.3)** 
+**Скачать и запустить [ReSwitch.exe](https://github.com/dinosmike/ReSwitch/releases/tag/ReSwitch_1_4) (версия 1.4)** 
 
 ## Скриншот программы
 
