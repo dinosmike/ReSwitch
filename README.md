@@ -8,7 +8,7 @@
 
 ## Скриншот программы
 
-![Скриншот программы ](https://images2.imgbox.com/d3/db/4QgbQr3f_o.jpg)
+![Скриншот программы ](https://images2.imgbox.com/db/4b/nizkFXnq_o.jpg)
 
 ## Основной функционал
 
