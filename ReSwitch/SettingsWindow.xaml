@@ -89,10 +89,18 @@
                             Padding="14,0,8,0"
                             MouseLeftButtonDown="TitleBar_OnMouseDown">
                         <StackPanel VerticalAlignment="Center">
-                            <TextBlock Text="{DynamicResource Loc_SettingsWindow_Header}"
-                                       FontSize="15"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource Rs.Text.Primary}"/>
+                            <StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+                                <TextBlock Text="{DynamicResource Loc_SettingsWindow_Header}"
+                                           FontSize="15"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource Rs.Text.Primary}"
+                                           VerticalAlignment="Center"
+                                           Cursor="Hand"
+                                           MouseLeftButtonDown="TitleBarAbout_OnMouseLeftButtonDown"/>
+                                <Button Click="TitleBarAbout_OnClick"
+                                        Style="{StaticResource Rs.TitleBar.AboutInfo}"/>
+                            </StackPanel>
                             <TextBlock Margin="0,2,0,0"
                                        FontSize="11"
                                        Foreground="{DynamicResource Rs.Text.Muted}"
@@ -280,7 +288,12 @@
                                     <RadioButton x:Name="TraySingleToggleProfile"
                                                  Style="{StaticResource ThemeRadioStyle}"
                                                  GroupName="TraySingle"
-                                                 Content="{DynamicResource Loc_SettingsWindow_TrayToggleProfile}"/>
+                                                 Content="{DynamicResource Loc_SettingsWindow_TrayToggleProfile}"
+                                                 Margin="0,0,0,8"/>
+                                    <RadioButton x:Name="TraySingleRandomAdvice"
+                                                 Style="{StaticResource ThemeRadioStyle}"
+                                                 GroupName="TraySingle"
+                                                 Content="{DynamicResource Loc_SettingsWindow_TrayRandomAdvice}"/>
                                 </StackPanel>
                                 <CheckBox x:Name="TrayShowResolutionMenuCheck"
                                           Margin="0,12,0,0"

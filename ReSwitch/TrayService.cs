@@ -153,6 +153,9 @@ public sealed class TrayService : IDisposable
             case TrayIconClickAction.ToggleResolution:
                 ResolutionSwitchCoordinator.ToggleBetweenFirstTwoProfiles(GetOwnerWindow());
                 break;
+            case TrayIconClickAction.ShowRandomAdvice:
+                AdviceService.RequestAdviceFromTray();
+                break;
         }
     }
 

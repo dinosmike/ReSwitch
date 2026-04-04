@@ -1,9 +1,5 @@
-using System.Drawing;
 using System.Threading;
 using System.Windows;
-using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using ReSwitch.Models;
 using ReSwitch.Services;
@@ -65,17 +61,6 @@ public partial class App : System.Windows.Application
         ThemeService.Apply(startupSettings.UiTheme);
         LocalizationService.Apply(AppLanguageCatalog.Normalize(startupSettings.UiLanguage));
 
-        var icon = AppIconFactory.CreateApplicationIcon(startupSettings.UiTheme);
-        ImageSource? wpfIcon = null;
-        try
-        {
-            wpfIcon = ToImageSource(icon);
-        }
-        finally
-        {
-            icon.Dispose();
-        }
-
         // Вопрос «советы при запуске» только выставляет AdviceEnabled и сбрасывает askOnStart; запуск программы идёт дальше в любом случае.
         if (startupSettings.AdviceAskOnStart)
         {
@@ -85,7 +70,8 @@ public partial class App : System.Windows.Application
         }
 
         ShutdownMode = ShutdownMode.OnLastWindowClose;
-        var main = new MainWindow { Icon = wpfIcon };
+        // Icon не задаём — Windows берёт многомасштабную иконку из exe (ApplicationIcon), как у окна настроек.
+        var main = new MainWindow();
         MainWindow = main;
         main.Show();
 
@@ -101,15 +87,9 @@ public partial class App : System.Windows.Application
     /// <summary>Пересобрать меню трея (профили, язык, пункты из настроек).</summary>
     internal void RefreshTrayMenu() => _tray?.RefreshTexts();
 
-    /// <summary>Иконка окна и трея — те же оттенки, что и активная тема UI.</summary>
+    /// <summary>Иконка трея (окно использует встроенную в exe иконку).</summary>
     public void RefreshIconsForTheme(UiTheme theme)
     {
-        if (MainWindow is MainWindow mw)
-        {
-            using var ico = AppIconFactory.CreateApplicationIcon(theme);
-            mw.Icon = ToImageSource(ico);
-        }
-
         _tray?.RefreshIcon(theme);
     }
 
@@ -157,11 +137,4 @@ public partial class App : System.Windows.Application
         }
     }
 
-    private static ImageSource ToImageSource(Icon icon)
-    {
-        return Imaging.CreateBitmapSourceFromHIcon(
-            icon.Handle,
-            Int32Rect.Empty,
-            BitmapSizeOptions.FromEmptyOptions());
-    }
 }

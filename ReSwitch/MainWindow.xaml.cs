@@ -313,6 +313,14 @@ public partial class MainWindow
             DragMove();
     }
 
+    private void TitleBarAbout_OnClick(object sender, RoutedEventArgs e) => About.Show(this);
+
+    private void TitleBarAbout_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        About.Show(this);
+    }
+
     private void TitleBarMinimize_OnClick(object sender, RoutedEventArgs e)
     {
         WindowState = WindowState.Minimized;

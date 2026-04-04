@@ -10,5 +10,8 @@ public enum TrayIconClickAction
     OpenWindow = 1,
 
     /// <summary>Переключить профиль разрешения.</summary>
-    ToggleResolution = 2
+    ToggleResolution = 2,
+
+    /// <summary>Показать случайный совет (оверлей).</summary>
+    ShowRandomAdvice = 3
 }

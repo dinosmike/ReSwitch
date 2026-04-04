@@ -138,13 +138,17 @@ public partial class SettingsWindow
         AdviceOnStartupCheck.IsChecked = settings.AdviceEnabled;
 
         var action = settings.TraySingleClickAction ?? TrayIconClickAction.OpenWindow;
-        if (action == TrayIconClickAction.ToggleResolution)
+        switch (action)
         {
-            TraySingleToggleProfile.IsChecked = true;
-        }
-        else
-        {
-            TraySingleOpenWindow.IsChecked = true;
+            case TrayIconClickAction.ToggleResolution:
+                TraySingleToggleProfile.IsChecked = true;
+                break;
+            case TrayIconClickAction.ShowRandomAdvice:
+                TraySingleRandomAdvice.IsChecked = true;
+                break;
+            default:
+                TraySingleOpenWindow.IsChecked = true;
+                break;
         }
 
         UpdateConfirmDependentUi();
@@ -185,9 +189,12 @@ public partial class SettingsWindow
         _settings.MinimizeToTrayOnStartup = StartupToTrayCheck.IsChecked == true;
         _settings.MinimizeToTrayAnimationEnabled = TrayHideAnimationCheck.IsChecked == true;
         _settings.UiTheme = ReadThemeFromRadios();
-        _settings.TraySingleClickAction = TraySingleToggleProfile.IsChecked == true
-            ? TrayIconClickAction.ToggleResolution
-            : TrayIconClickAction.OpenWindow;
+        if (TraySingleToggleProfile.IsChecked == true)
+            _settings.TraySingleClickAction = TrayIconClickAction.ToggleResolution;
+        else if (TraySingleRandomAdvice.IsChecked == true)
+            _settings.TraySingleClickAction = TrayIconClickAction.ShowRandomAdvice;
+        else
+            _settings.TraySingleClickAction = TrayIconClickAction.OpenWindow;
         _settings.ShowResolutionListInTrayMenu = TrayShowResolutionMenuCheck.IsChecked == true;
         _settings.ShowProfileNamesInTrayMenu = TrayShowProfileNamesCheck.IsChecked == true;
         _settings.AdviceEnabled = AdviceOnStartupCheck.IsChecked == true;
@@ -277,5 +284,13 @@ public partial class SettingsWindow
     private void TitleBarClose_OnClick(object sender, RoutedEventArgs e)
     {
         Cancel_OnClick(sender, e);
+    }
+
+    private void TitleBarAbout_OnClick(object sender, RoutedEventArgs e) => About.Show(this);
+
+    private void TitleBarAbout_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        About.Show(this);
     }
 }

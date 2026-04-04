@@ -6,8 +6,8 @@ namespace ReSwitch.Services;
 /// <summary>API fucking-great-advice.ru — только русский текст.</summary>
 public static class GreatAdviceApiClient
 {
-    private const string UrlRandom = "http://fucking-great-advice.ru/api/random";
-    private const string UrlCensored = "http://fucking-great-advice.ru/api/random/censored/";
+    private const string UrlRandom = "https://fucking-great-advice.ru/api/random";
+    private const string UrlCensored = "https://fucking-great-advice.ru/api/random/censored/";
 
     public static async Task<string?> FetchRandomAsync(bool censored, CancellationToken cancellationToken)
     {

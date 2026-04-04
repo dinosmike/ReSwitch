@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="app.ico" />
     <Resource Include="Fonts\HelveticaInseratLTStd-Roman.otf" />
     <Resource Include="Fonts\RobotoCondensed-Bold.ttf" />
     <Resource Include="Fonts\segoeui.ttf" />

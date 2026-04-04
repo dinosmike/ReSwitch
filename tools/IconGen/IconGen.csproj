@@ -9,8 +9,4 @@
     <RootNamespace>IconGen</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\ReSwitch\ReSwitch.csproj" />
-  </ItemGroup>
-
 </Project>

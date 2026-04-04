@@ -91,7 +91,8 @@ public static class AdviceService
             {
                 if (presentationWindow != null && !presentationWindow.IsLoaded)
                     return;
-                var w = new AdviceOverlayWindow(tipText, SettingsStorage.Load(), openedFromTray);
+                ReSwitch.AdviceOverlayWindow.CloseAllOpen();
+                var w = new ReSwitch.AdviceOverlayWindow(tipText, SettingsStorage.Load(), openedFromTray);
                 w.Show();
             }));
         });

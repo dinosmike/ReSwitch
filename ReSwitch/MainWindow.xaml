@@ -88,12 +88,11 @@
                             MouseLeftButtonDown="TitleBar_OnMouseDown">
                         <StackPanel VerticalAlignment="Center">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="ReSwitch" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Bottom"/>
-                                <!-- Номер текущей версии программы, меняется только вручную -->
-                                <TextBlock Text="1.3" FontSize="12" FontWeight="Thin"
-                                           Foreground="{DynamicResource Rs.Text.Muted}"
-                                           VerticalAlignment="Bottom"
-                                           Margin="6,0,0,1"/>
+                                <TextBlock Text="ReSwitch" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Bottom"
+                                           Cursor="Hand"
+                                           MouseLeftButtonDown="TitleBarAbout_OnMouseLeftButtonDown"/>
+                                <Button Click="TitleBarAbout_OnClick"
+                                        Style="{StaticResource Rs.TitleBar.AboutInfo}"/>
                             </StackPanel>
                             <TextBlock Margin="0,2,0,0"
                                        FontSize="11"

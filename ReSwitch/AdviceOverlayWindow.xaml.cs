@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -12,6 +13,23 @@ namespace ReSwitch;
 
 public partial class AdviceOverlayWindow
 {
+    /// <summary>Закрыть все открытые оверлеи советов перед показом нового.</summary>
+    public static void CloseAllOpen()
+    {
+        var app = System.Windows.Application.Current;
+        if (app == null)
+            return;
+        var toClose = new List<AdviceOverlayWindow>();
+        foreach (Window w in app.Windows)
+        {
+            if (w is AdviceOverlayWindow o)
+                toClose.Add(o);
+        }
+
+        foreach (var o in toClose)
+            o.CloseInstant();
+    }
+
     /// <summary>Сдвиг оверлея вверх относительно расчётной позиции (логические px WPF).</summary>
     private const double VerticalOffsetUpPx = 15;
 
