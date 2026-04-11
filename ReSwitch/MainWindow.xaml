@@ -53,6 +53,60 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <BitmapImage x:Key="Rs.IconQ.Color"
+                     UriSource="pack://application:,,,/Assets/icon-Q.png"
+                     CacheOption="OnLoad"/>
+        <BitmapImage x:Key="Rs.IconQ.Gray"
+                     UriSource="pack://application:,,,/Assets/icon-Q-black_and_white.png"
+                     CacheOption="OnLoad"
+                     CreateOptions="IgnoreImageCache"/>
+
+        <!-- Кнопка ReQuit: без рамки/фона, крупнее иконка, визуальный «вжатие» при клике -->
+        <Style x:Key="Rs.ReQuit.IconButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="MinHeight" Value="43"/>
+            <Setter Property="MinWidth" Value="55"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True"
+                                UseLayoutRounding="True"
+                                RenderTransformOrigin="0.5,0.5">
+                            <Border.RenderTransform>
+                                <ScaleTransform ScaleX="1" ScaleY="1"/>
+                            </Border.RenderTransform>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- Клик: лёгкое затемнение + «вжатие» масштабом -->
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.78"/>
+                                <Setter TargetName="Bd" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <ScaleTransform ScaleX="0.88" ScaleY="0.88"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     <Window.RenderTransform>
         <ScaleTransform x:Name="TrayHideScale" ScaleX="1" ScaleY="1"/>
@@ -119,70 +173,108 @@
                 </Grid>
             </Border>
 
-            <DockPanel Margin="24" ClipToBounds="False">
-                <Border DockPanel.Dock="Top" Margin="0,0,0,16" Padding="0,0,0,16" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource Rs.Border}">
-                    <Grid>
-                        <TextBlock TextWrapping="Wrap" Text="{DynamicResource Loc_MainWindow_Intro}"
-                                   Foreground="#D9000000">
-                            <TextBlock.RenderTransform>
-                                <TranslateTransform X="0.75" Y="2.25"/>
-                            </TextBlock.RenderTransform>
-                        </TextBlock>
-                        <TextBlock Foreground="{DynamicResource Rs.Text.Muted}" TextWrapping="Wrap"
-                                   Text="{DynamicResource Loc_MainWindow_Intro}"/>
-                    </Grid>
-                </Border>
+            <!-- Оверлей: кнопка ReQuit не участвует в раскладке DockPanel и не сдвигает остальной UI -->
+            <Grid Margin="24" ClipToBounds="False">
+                <DockPanel ClipToBounds="False">
+                    <Border DockPanel.Dock="Top" Margin="0,0,0,16" Padding="0,0,0,16" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource Rs.Border}">
+                        <Grid>
+                            <TextBlock TextWrapping="Wrap" Text="{DynamicResource Loc_MainWindow_Intro}"
+                                       Foreground="#D9000000">
+                                <TextBlock.RenderTransform>
+                                    <TranslateTransform X="0.75" Y="2.25"/>
+                                </TextBlock.RenderTransform>
+                            </TextBlock>
+                            <TextBlock Foreground="{DynamicResource Rs.Text.Muted}" TextWrapping="Wrap"
+                                       Text="{DynamicResource Loc_MainWindow_Intro}"/>
+                        </Grid>
+                    </Border>
 
-                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,3,0">
-                    <!-- Место под галочку фиксировано (MinWidth), чтобы кнопка не сдвигалась -->
-                    <TextBlock x:Name="SaveFeedbackCheck"
-                               Text="✓"
-                               FontSize="20"
-                               FontWeight="Bold"
-                               Foreground="{DynamicResource Rs.SaveSuccess}"
-                               VerticalAlignment="Center"
-                               Margin="0,0,10,0"
-                               MinWidth="28"
-                               TextAlignment="Center"
-                               Opacity="0"/>
-                    <Button x:Name="BtnSaveProfiles"
-                            Content="{DynamicResource Loc_MainWindow_SaveProfiles}"
-                            MinWidth="160"
-                            Margin="0,0,12,0"
-                            Padding="16,8"
-                            Style="{StaticResource Rs.Button.Accent}"
-                            Click="Save_OnClick"/>
-                    <Button Style="{StaticResource Rs.Button}" MinWidth="120" Padding="12,8" Click="OpenSettings_OnClick">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Style="{StaticResource Rs.TextBlock.ProfileActionIcon}" FontSize="12" Text="&#xE713;"/>
-                            <TextBlock VerticalAlignment="Center"
-                                       Text="{DynamicResource Loc_MainWindow_Settings}"
-                                       Foreground="{DynamicResource Rs.Text.Primary}"/>
+                    <Grid DockPanel.Dock="Bottom" Margin="0,16,3,0">
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Center">
+                            <!-- Место под галочку фиксировано (MinWidth), чтобы кнопка не сдвигалась -->
+                            <TextBlock x:Name="SaveFeedbackCheck"
+                                       Text="✓"
+                                       FontSize="20"
+                                       FontWeight="Bold"
+                                       Foreground="{DynamicResource Rs.SaveSuccess}"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,10,0"
+                                       MinWidth="28"
+                                       TextAlignment="Center"
+                                       Opacity="0"/>
+                            <Button x:Name="BtnSaveProfiles"
+                                    Content="{DynamicResource Loc_MainWindow_SaveProfiles}"
+                                    MinWidth="160"
+                                    Margin="0,0,12,0"
+                                    Padding="16,8"
+                                    Style="{StaticResource Rs.Button.Accent}"
+                                    Click="Save_OnClick"/>
+                            <Button Style="{StaticResource Rs.Button}" MinWidth="120" Padding="12,8" Click="OpenSettings_OnClick">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Style="{StaticResource Rs.TextBlock.ProfileActionIcon}" FontSize="12" Text="&#xE713;"/>
+                                    <TextBlock VerticalAlignment="Center"
+                                               Text="{DynamicResource Loc_MainWindow_Settings}"
+                                               Foreground="{DynamicResource Rs.Text.Primary}"/>
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
-                    </Button>
-                </StackPanel>
+                    </Grid>
 
-                <!-- Плюс: Margin.Right задаётся в коде из Rs.Profile.AddButton.DistanceFromWindowRightPx; по вертикали — центр высоты карточки -->
-                <Grid MinHeight="120" ClipToBounds="False">
-                    <StackPanel x:Name="ProfilesContainer"
-                                Orientation="Horizontal"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Top"/>
-                    <Button x:Name="BtnAddProfile"
-                            Style="{StaticResource Rs.Profile.AddOverlay}"
-                            Content="+"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Margin="0"
-                            Panel.ZIndex="1"
-                            Visibility="Collapsed"
-                            Click="BtnAddProfile_OnClick">
-                        <Button.Effect>
-                            <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.35" Direction="270"/>
-                        </Button.Effect>
-                    </Button>
-                </Grid>
-            </DockPanel>
+                    <!-- Плюс: Margin.Right задаётся в коде из Rs.Profile.AddButton.DistanceFromWindowRightPx; по вертикали — центр высоты карточки -->
+                    <Grid MinHeight="120" ClipToBounds="False">
+                        <StackPanel x:Name="ProfilesContainer"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top"/>
+                        <Button x:Name="BtnAddProfile"
+                                Style="{StaticResource Rs.Profile.AddOverlay}"
+                                Content="+"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Margin="0"
+                                Panel.ZIndex="1"
+                                Visibility="Collapsed"
+                                Click="BtnAddProfile_OnClick">
+                            <Button.Effect>
+                                <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.35" Direction="270"/>
+                            </Button.Effect>
+                        </Button>
+                    </Grid>
+                </DockPanel>
+
+                <Button x:Name="BtnReQuit"
+                        Visibility="Collapsed"
+                        Style="{StaticResource Rs.ReQuit.IconButton}"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        Margin="-8,0,0,-4"
+                        Panel.ZIndex="2"
+                        Click="ReQuit_OnClick">
+                    <!-- Один Image + смена Source: без «дёрганья» от разного размера двух картинок и без мерцания Visibility -->
+                    <Border Width="51"
+                            Height="35"
+                            SnapsToDevicePixels="True"
+                            UseLayoutRounding="True">
+                        <Image Stretch="Uniform"
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source" Value="{StaticResource Rs.IconQ.Gray}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
+                                            <Setter Property="Source" Value="{StaticResource Rs.IconQ.Color}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                    </Border>
+                </Button>
+            </Grid>
         </DockPanel>
     </Border>
 </Window>

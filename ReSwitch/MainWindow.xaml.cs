@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
+using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -59,6 +62,45 @@ public partial class MainWindow
         LocalizationService.LanguageChanged += OnLocalizationLanguageChanged;
         // Совет при запуске (оверлей) — после компоновки главного окна; диалог askOnStart показывается в App до Show() главного окна.
         Dispatcher.BeginInvoke(() => AdviceService.TryScheduleStartupTip(this), DispatcherPriority.ApplicationIdle);
+        Dispatcher.BeginInvoke(async () => await TryShowReQuitButtonAfterStartupAsync(), DispatcherPriority.ApplicationIdle);
+    }
+
+    private async Task TryShowReQuitButtonAfterStartupAsync()
+    {
+        try
+        {
+            await Task.Yield();
+            var reQuitPath = Path.Combine(AppContext.BaseDirectory, "ReQuit.exe");
+            var exists = await Task.Run(() => File.Exists(reQuitPath));
+            if (exists)
+                BtnReQuit.Visibility = Visibility.Visible;
+        }
+        catch
+        {
+            // optional/hidden UI: ignore any IO / thread exceptions
+        }
+    }
+
+    private void ReQuit_OnClick(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var reQuitPath = Path.Combine(AppContext.BaseDirectory, "ReQuit.exe");
+            if (!File.Exists(reQuitPath))
+                return;
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = reQuitPath,
+                WorkingDirectory = AppContext.BaseDirectory,
+                UseShellExecute = true
+            };
+            Process.Start(psi);
+        }
+        catch
+        {
+            // optional/hidden UI: ignore start failures
+        }
     }
 
     private void OnLocalizationLanguageChanged()
