@@ -62,18 +62,32 @@ public partial class MainWindow
         LocalizationService.LanguageChanged += OnLocalizationLanguageChanged;
         // Совет при запуске (оверлей) — после компоновки главного окна; диалог askOnStart показывается в App до Show() главного окна.
         Dispatcher.BeginInvoke(() => AdviceService.TryScheduleStartupTip(this), DispatcherPriority.ApplicationIdle);
-        Dispatcher.BeginInvoke(async () => await TryShowReQuitButtonAfterStartupAsync(), DispatcherPriority.ApplicationIdle);
+        Dispatcher.BeginInvoke(async () => await TryShowCompanionButtonsAfterStartupAsync(), DispatcherPriority.ApplicationIdle);
     }
 
-    private async Task TryShowReQuitButtonAfterStartupAsync()
+    private static readonly string[] CompanionExeNames = { "ReQuit.exe", "ReIcon.exe", "ReFlow.exe" };
+
+    private async Task TryShowCompanionButtonsAfterStartupAsync()
     {
         try
         {
             await Task.Yield();
-            var reQuitPath = Path.Combine(AppContext.BaseDirectory, "ReQuit.exe");
-            var exists = await Task.Run(() => File.Exists(reQuitPath));
-            if (exists)
-                BtnReQuit.Visibility = Visibility.Visible;
+            var dir = AppContext.BaseDirectory;
+            var exists = await Task.Run(() =>
+            {
+                var map = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+                foreach (var name in CompanionExeNames)
+                    map[name] = File.Exists(Path.Combine(dir, name));
+                return map;
+            });
+
+            BtnReQuit.Visibility = exists.GetValueOrDefault("ReQuit.exe") ? Visibility.Visible : Visibility.Collapsed;
+            BtnReIcon.Visibility = exists.GetValueOrDefault("ReIcon.exe") ? Visibility.Visible : Visibility.Collapsed;
+            BtnReFlow.Visibility = exists.GetValueOrDefault("ReFlow.exe") ? Visibility.Visible : Visibility.Collapsed;
+
+            CompanionAppPresence.SetFromScan(exists);
+            if (System.Windows.Application.Current is App app)
+                app.RefreshTrayMenu();
         }
         catch
         {
@@ -81,17 +95,23 @@ public partial class MainWindow
         }
     }
 
-    private void ReQuit_OnClick(object sender, RoutedEventArgs e)
+    private void CompanionExe_OnClick(object sender, RoutedEventArgs e)
     {
         try
         {
-            var reQuitPath = Path.Combine(AppContext.BaseDirectory, "ReQuit.exe");
-            if (!File.Exists(reQuitPath))
+            if (sender is not System.Windows.Controls.Button btn || btn.Tag is not string fileName || string.IsNullOrWhiteSpace(fileName))
+                return;
+
+            if (!CompanionExeNames.Contains(fileName, StringComparer.OrdinalIgnoreCase))
+                return;
+
+            var path = Path.Combine(AppContext.BaseDirectory, fileName);
+            if (!File.Exists(path))
                 return;
 
             var psi = new ProcessStartInfo
             {
-                FileName = reQuitPath,
+                FileName = path,
                 WorkingDirectory = AppContext.BaseDirectory,
                 UseShellExecute = true
             };

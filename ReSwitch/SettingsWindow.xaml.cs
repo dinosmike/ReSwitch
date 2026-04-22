@@ -15,6 +15,7 @@ public partial class SettingsWindow
     private bool _languageComboLoading;
     private UiTheme _themeAtOpen;
     private string _languageAtOpen = "en";
+    private bool _saved;
 
     /// <summary>Если задано (главное окно открыто), перед записью Re_settings.json подтянуть профили с полей главного окна.</summary>
     public Func<bool>? SyncProfilesFromMainWindow { get; set; }
@@ -47,8 +48,19 @@ public partial class SettingsWindow
             _singletonInstance = dlg;
             try
             {
-                if (dlg.ShowDialog() == true && app.MainWindow is MainWindow main)
-                    main.ReloadFromStorage();
+                dlg.Closed += (_, _) =>
+                {
+                    try
+                    {
+                        if (dlg._saved && app.MainWindow is MainWindow main)
+                            main.ReloadFromStorage();
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+                };
+                dlg.Show();
             }
             finally
             {
@@ -134,6 +146,10 @@ public partial class SettingsWindow
         TimeoutBox.Text = settings.ConfirmTimeoutSeconds.ToString();
         TrayShowResolutionMenuCheck.IsChecked = settings.ShowResolutionListInTrayMenu == true;
         TrayShowProfileNamesCheck.IsChecked = settings.ShowProfileNamesInTrayMenu != false;
+        TrayShowHiddenCompanionMenuCheck.IsChecked = settings.Tray.ShowHiddenCompanionTrayItems;
+        TrayShowHiddenCompanionMenuCheck.Visibility = CompanionAppPresence.AnyCompanionDetected
+            ? Visibility.Visible
+            : Visibility.Collapsed;
 
         AdviceOnStartupCheck.IsChecked = settings.AdviceEnabled;
 
@@ -197,6 +213,8 @@ public partial class SettingsWindow
             _settings.TraySingleClickAction = TrayIconClickAction.OpenWindow;
         _settings.ShowResolutionListInTrayMenu = TrayShowResolutionMenuCheck.IsChecked == true;
         _settings.ShowProfileNamesInTrayMenu = TrayShowProfileNamesCheck.IsChecked == true;
+        if (TrayShowHiddenCompanionMenuCheck.Visibility == Visibility.Visible)
+            _settings.Tray.ShowHiddenCompanionTrayItems = TrayShowHiddenCompanionMenuCheck.IsChecked == true;
         _settings.AdviceEnabled = AdviceOnStartupCheck.IsChecked == true;
         if (!int.TryParse(TimeoutBox.Text.Trim(), out var sec) || sec < 1)
             sec = 15;
@@ -210,7 +228,9 @@ public partial class SettingsWindow
         _settings.AutostartEnabled = wantAutostart;
 
         SettingsStorage.Save(_settings);
-        DialogResult = true;
+        if (System.Windows.Application.Current is App app)
+            app.RefreshTrayMenu();
+        _saved = true;
         Close();
     }
 
@@ -241,7 +261,7 @@ public partial class SettingsWindow
         SettingsStorage.Save(_settings);
         LocalizationService.Apply(_languageAtOpen);
         ThemeService.Apply(_themeAtOpen);
-        DialogResult = false;
+        _saved = false;
         Close();
     }
 

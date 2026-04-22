@@ -182,7 +182,8 @@ public sealed class AppSettings
             {
                 SingleClickAction = TrayIconClickAction.OpenWindow,
                 ShowResolutionListInTrayMenu = false,
-                ShowProfileNamesInTrayMenu = true
+                ShowProfileNamesInTrayMenu = true,
+                ShowHiddenCompanionTrayItems = false
             },
             Ui = new UiAppearanceSettings
             {

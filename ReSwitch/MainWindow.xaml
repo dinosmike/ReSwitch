@@ -62,6 +62,22 @@
                      CacheOption="OnLoad"
                      CreateOptions="IgnoreImageCache"/>
 
+        <BitmapImage x:Key="Rs.IconI.Color"
+                     UriSource="pack://application:,,,/Assets/icon-I.png"
+                     CacheOption="OnLoad"/>
+        <BitmapImage x:Key="Rs.IconI.Gray"
+                     UriSource="pack://application:,,,/Assets/icon-I-black_and_white.png"
+                     CacheOption="OnLoad"
+                     CreateOptions="IgnoreImageCache"/>
+
+        <BitmapImage x:Key="Rs.IconF.Color"
+                     UriSource="pack://application:,,,/Assets/icon-F.png"
+                     CacheOption="OnLoad"/>
+        <BitmapImage x:Key="Rs.IconF.Gray"
+                     UriSource="pack://application:,,,/Assets/icon-F-black_and_white.png"
+                     CacheOption="OnLoad"
+                     CreateOptions="IgnoreImageCache"/>
+
         <!-- Кнопка ReQuit: без рамки/фона, крупнее иконка, визуальный «вжатие» при клике -->
         <Style x:Key="Rs.ReQuit.IconButton" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
@@ -251,7 +267,8 @@
                         VerticalAlignment="Bottom"
                         Margin="-8,0,0,-4"
                         Panel.ZIndex="2"
-                        Click="ReQuit_OnClick">
+                        Tag="ReQuit.exe"
+                        Click="CompanionExe_OnClick">
                     <!-- Один Image + смена Source: без «дёрганья» от разного размера двух картинок и без мерцания Visibility -->
                     <Border Width="51"
                             Height="35"
@@ -267,6 +284,68 @@
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
                                             <Setter Property="Source" Value="{StaticResource Rs.IconQ.Color}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                    </Border>
+                </Button>
+
+                <Button x:Name="BtnReIcon"
+                        Visibility="Collapsed"
+                        Style="{StaticResource Rs.ReQuit.IconButton}"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        Margin="44,0,0,-4"
+                        Panel.ZIndex="2"
+                        Tag="ReIcon.exe"
+                        Click="CompanionExe_OnClick">
+                    <Border Width="51"
+                            Height="35"
+                            SnapsToDevicePixels="True"
+                            UseLayoutRounding="True">
+                        <Image Stretch="Uniform"
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source" Value="{StaticResource Rs.IconI.Gray}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
+                                            <Setter Property="Source" Value="{StaticResource Rs.IconI.Color}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
+                    </Border>
+                </Button>
+
+                <Button x:Name="BtnReFlow"
+                        Visibility="Collapsed"
+                        Style="{StaticResource Rs.ReQuit.IconButton}"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Bottom"
+                        Margin="96,0,0,-4"
+                        Panel.ZIndex="2"
+                        Tag="ReFlow.exe"
+                        Click="CompanionExe_OnClick">
+                    <Border Width="51"
+                            Height="35"
+                            SnapsToDevicePixels="True"
+                            UseLayoutRounding="True">
+                        <Image Stretch="Uniform"
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Setter Property="Source" Value="{StaticResource Rs.IconF.Gray}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsMouseOver, RelativeSource={RelativeSource AncestorType=Button}}" Value="True">
+                                            <Setter Property="Source" Value="{StaticResource Rs.IconF.Color}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>

@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Threading;
@@ -58,15 +60,46 @@ public sealed class TrayService : IDisposable
         oldMenu?.Dispose();
     }
 
+    private static readonly (string Exe, string LocKey)[] CompanionTrayItems =
+    {
+        ("ReQuit.exe", "Tray.MenuCompanionReQuit"),
+        ("ReIcon.exe", "Tray.MenuCompanionReIcon"),
+        ("ReFlow.exe", "Tray.MenuCompanionReFlow")
+    };
+
     private ContextMenuStrip BuildContextMenu()
     {
         var menu = new ContextMenuStrip();
         var settings = SettingsStorage.Load();
+        var baseDir = AppContext.BaseDirectory;
 
         menu.Items.Add(LocalizationService.T("Tray.MenuOpen"), null, (_, _) => ShowMain());
         if (settings.AdviceEnabled)
             menu.Items.Add(LocalizationService.T("Tray.MenuRequestAdvice"), null, (_, _) => AdviceService.RequestAdviceFromTray());
         menu.Items.Add(LocalizationService.T("Tray.MenuSettings"), null, (_, _) => ShowSettings());
+
+        if (settings.Tray.ShowHiddenCompanionTrayItems)
+        {
+            var addedAny = false;
+            foreach (var (exe, locKey) in CompanionTrayItems)
+            {
+                if (!CompanionAppPresence.WasDetectedAtStartup(exe))
+                    continue;
+                var path = Path.Combine(baseDir, exe);
+                if (!File.Exists(path))
+                    continue;
+
+                if (!addedAny)
+                {
+                    menu.Items.Add(new ToolStripSeparator());
+                    addedAny = true;
+                }
+
+                var exeCopy = exe;
+                menu.Items.Add(LocalizationService.T(locKey), null, (_, _) => LaunchCompanionExe(exeCopy));
+            }
+        }
+
         menu.Items.Add(new ToolStripSeparator());
 
         if (settings.ShowResolutionListInTrayMenu == true && settings.Profiles.Count >= 2)
@@ -85,6 +118,28 @@ public sealed class TrayService : IDisposable
 
         menu.Items.Add(LocalizationService.T("Tray.MenuExit"), null, (_, _) => ExitApp());
         return menu;
+    }
+
+    private static void LaunchCompanionExe(string exeFileName)
+    {
+        try
+        {
+            if (!CompanionAppPresence.WasDetectedAtStartup(exeFileName))
+                return;
+            var path = Path.Combine(AppContext.BaseDirectory, exeFileName);
+            if (!File.Exists(path))
+                return;
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = path,
+                WorkingDirectory = AppContext.BaseDirectory,
+                UseShellExecute = true
+            });
+        }
+        catch
+        {
+            // ignored
+        }
     }
 
     private static string FormatProfileTrayMenuLabel(DisplayProfile p, AppSettings settings)

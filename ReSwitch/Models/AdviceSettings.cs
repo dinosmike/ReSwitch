@@ -23,9 +23,9 @@ public sealed class AdviceSettings
     /// </summary>
     public int TrayOpenHoverFadeCooldownMs { get; set; } = 2000;
 
-    public string FontFamily { get; set; } = "Helvetica Inserat LT Std";
+    public string FontFamily { get; set; } = "Helvetica LT Pro UltraCompressed";
 
-    public double FontSizePx { get; set; } = 72;
+    public double FontSizePx { get; set; } = 100;
 
     public string ForegroundHex { get; set; } = "#D3D3D3";
 

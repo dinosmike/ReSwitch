@@ -5,12 +5,12 @@ using WpfFonts = System.Windows.Media.Fonts;
 namespace ReSwitch.Services;
 
 /// <summary>
-/// Резолвер шрифта окна совета: встроенный Helvetica Inserat LT Std (Roman), при необходимости — Roboto Condensed (старые настройки), иначе системные шрифты.
+/// Резолвер шрифта окна совета: встроенный Helvetica LT Pro UltraCompressed, при необходимости — Roboto Condensed (старые настройки), иначе системные шрифты.
 /// </summary>
 public static class AdviceFontResolver
 {
-    private const string EmbeddedHelveticaUri = "./Fonts/#Helvetica Inserat LT Std";
-    private const string EmbeddedHelveticaFamilyName = "Helvetica Inserat LT Std";
+    private const string EmbeddedHelveticaUri = "./Fonts/#Helvetica LT Pro UltraCompressed";
+    private const string EmbeddedHelveticaFamilyName = "Helvetica LT Pro UltraCompressed";
 
     private const string EmbeddedRobotoUri = "./Fonts/#Roboto Condensed";
     private const string EmbeddedRobotoFamilyName = "Roboto Condensed";
@@ -23,7 +23,7 @@ public static class AdviceFontResolver
             ? EmbeddedHelveticaFamilyName
             : preferredFromSettings.Trim();
 
-        if (IsHelveticaInserat(preferred))
+        if (IsEmbeddedHelvetica(preferred))
             return new WpfFontFamily(PackRoot, EmbeddedHelveticaUri);
 
         if (IsRobotoCondensed(preferred))
@@ -47,10 +47,11 @@ public static class AdviceFontResolver
         }
     }
 
-    private static bool IsHelveticaInserat(string name)
+    private static bool IsEmbeddedHelvetica(string name)
     {
         var n = name.Replace(" ", "", StringComparison.Ordinal).ToLowerInvariant();
-        return n.Contains("helveticainserat");
+        // Back-compat: old settings value ("Helvetica Inserat LT Std") should still resolve to embedded Helvetica.
+        return n.Contains("helveticainserat") || n.Contains("helveticaltproultracompressed");
     }
 
     private static bool IsRobotoCondensed(string name)

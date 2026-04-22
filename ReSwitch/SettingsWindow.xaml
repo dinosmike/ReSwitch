@@ -303,6 +303,10 @@
                                 <CheckBox x:Name="TrayShowProfileNamesCheck"
                                           Margin="0,8,0,0"
                                           Content="{DynamicResource Loc_SettingsWindow_TrayShowProfileNames}"/>
+                                <CheckBox x:Name="TrayShowHiddenCompanionMenuCheck"
+                                          Margin="0,8,0,0"
+                                          Visibility="Collapsed"
+                                          Content="{DynamicResource Loc_SettingsWindow_ShowHiddenCompanionTrayItems}"/>
                             </StackPanel>
                         </Border>
                 </StackPanel>

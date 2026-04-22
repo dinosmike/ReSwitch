@@ -24,7 +24,12 @@
     <Resource Include="app.ico" />
     <Resource Include="Assets\icon-Q.png" />
     <Resource Include="Assets\icon-Q-black_and_white.png" />
+    <Resource Include="Assets\icon-I.png" />
+    <Resource Include="Assets\icon-I-black_and_white.png" />
+    <Resource Include="Assets\icon-F.png" />
+    <Resource Include="Assets\icon-F-black_and_white.png" />
     <Resource Include="Fonts\HelveticaInseratLTStd-Roman.otf" />
+    <Resource Include="Fonts\Helvetica LT Pro UltraCompressed.otf" />
     <Resource Include="Fonts\RobotoCondensed-Bold.ttf" />
     <Resource Include="Fonts\segoeui.ttf" />
     <Resource Include="Fonts\segoeuib.ttf" />

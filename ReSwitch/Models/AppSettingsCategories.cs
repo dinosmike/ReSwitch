@@ -28,6 +28,10 @@ public sealed class TrayMenuSettings
     public TrayIconClickAction? SingleClickAction { get; set; }
     public bool? ShowResolutionListInTrayMenu { get; set; }
     public bool? ShowProfileNamesInTrayMenu { get; set; }
+
+    /// <summary>Показывать в меню трея скрытые пункты (ReQuit/ReIcon/ReFlow), если они были обнаружены при запуске.</summary>
+    [JsonPropertyName("showHiddenCompanionTrayItems")]
+    public bool ShowHiddenCompanionTrayItems { get; set; } = false;
 }
 
 /// <summary>Тема и язык интерфейса.</summary>
