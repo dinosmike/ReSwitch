@@ -81,6 +81,13 @@ public sealed class AppSettings
     }
 
     [JsonIgnore]
+    public bool AutoUpdate
+    {
+        get => StartupAndWindow.AutoUpdate;
+        set => StartupAndWindow.AutoUpdate = value;
+    }
+
+    [JsonIgnore]
     public TrayIconClickAction? TraySingleClickAction
     {
         get => Tray.SingleClickAction;
@@ -176,7 +183,8 @@ public sealed class AppSettings
                 AutostartEnabled = false,
                 MinimizeToTrayOnCloseClick = false,
                 MinimizeToTrayOnStartup = false,
-                MinimizeToTrayAnimationEnabled = true
+                MinimizeToTrayAnimationEnabled = true,
+                AutoUpdate = true
             },
             Tray = new TrayMenuSettings
             {

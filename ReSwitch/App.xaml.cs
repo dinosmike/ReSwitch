@@ -53,6 +53,16 @@ public partial class App : System.Windows.Application
         var startupSettings = SettingsStorage.Load();
         AutostartService.SetEnabled(startupSettings.AutostartEnabled);
 
+        // Модуль ReUpdate: автообновление с GitHub и «Что нового» (см. ReUpdate\КАК ПОДКЛЮЧИТЬ.md).
+        ReUpdate.ReUpdateConfig.Owner = "dinosmike";
+        ReUpdate.ReUpdateConfig.Repo = "ReSwitch";
+        ReUpdate.ReUpdateConfig.AssetName = "ReSwitch.exe";
+        ReUpdate.ReUpdateConfig.AppDataFolderName = "ReSwitch";
+        ReUpdate.ReUpdateConfig.Language = () => LocalizationService.CurrentLanguageCode;
+        ReUpdate.ReUpdateConfig.AutoUpdateEnabled = () => SettingsStorage.Load().AutoUpdate;
+        ReUpdate.Updater.CleanupAfterUpdate();
+        ReUpdate.WhatsNewState.Initialize();
+
         // До показа главного окна нельзя использовать OnLastWindowClose: при первом запуске закрытие окна вопроса
         // (советы) сочтётся «последним окном» и процесс завершится до main.Show().
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
@@ -80,6 +90,7 @@ public partial class App : System.Windows.Application
 
         _tray = new TrayService(startupSettings.UiTheme);
         LocalizationService.LanguageChanged += OnLocalizationLanguageChanged;
+        ReUpdate.Updater.Start();
     }
 
     private void OnLocalizationLanguageChanged() => _tray?.RefreshTexts();

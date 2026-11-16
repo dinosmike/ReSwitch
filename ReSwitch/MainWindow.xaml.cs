@@ -54,8 +54,15 @@ public partial class MainWindow
         TooltipInitialShowDelayMs = _tooltipDelayMs;
         ReloadFromStorage();
         Loaded += MainWindow_OnLoaded;
+        // Точка на ⓘ, пока «Что нового» после обновления не прочитано (модуль ReUpdate).
+        UpdateWhatsNewDot();
+        ReUpdate.WhatsNewState.Changed += UpdateWhatsNewDot;
+        Closed += (_, _) => ReUpdate.WhatsNewState.Changed -= UpdateWhatsNewDot;
         Closed += (_, _) => LocalizationService.LanguageChanged -= OnLocalizationLanguageChanged;
     }
+
+    private void UpdateWhatsNewDot() =>
+        WhatsNewDot.Visibility = ReUpdate.WhatsNewState.HasUnseen ? Visibility.Visible : Visibility.Collapsed;
 
     private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
     {

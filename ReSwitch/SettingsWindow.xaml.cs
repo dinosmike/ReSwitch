@@ -143,6 +143,7 @@ public partial class SettingsWindow
         CloseToTrayCheck.IsChecked = settings.MinimizeToTrayOnCloseClick;
         StartupToTrayCheck.IsChecked = settings.MinimizeToTrayOnStartup;
         TrayHideAnimationCheck.IsChecked = settings.MinimizeToTrayAnimationEnabled;
+        AutoUpdateCheck.IsChecked = settings.AutoUpdate;
         TimeoutBox.Text = settings.ConfirmTimeoutSeconds.ToString();
         TrayShowResolutionMenuCheck.IsChecked = settings.ShowResolutionListInTrayMenu == true;
         TrayShowProfileNamesCheck.IsChecked = settings.ShowProfileNamesInTrayMenu != false;
@@ -204,6 +205,7 @@ public partial class SettingsWindow
         _settings.MinimizeToTrayOnCloseClick = CloseToTrayCheck.IsChecked == true;
         _settings.MinimizeToTrayOnStartup = StartupToTrayCheck.IsChecked == true;
         _settings.MinimizeToTrayAnimationEnabled = TrayHideAnimationCheck.IsChecked == true;
+        _settings.AutoUpdate = AutoUpdateCheck.IsChecked == true;
         _settings.UiTheme = ReadThemeFromRadios();
         if (TraySingleToggleProfile.IsChecked == true)
             _settings.TraySingleClickAction = TrayIconClickAction.ToggleResolution;
